@@ -1,12 +1,16 @@
 package top.niunaijun.blackbox.core.system.user;
 
 /**
- * Created by Milk on 4/22/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中用户的状态枚举。
+ * <p>
+ * 定义了用户的两种状态：
+ * <ul>
+ *   <li>{@link #ENABLE} - 用户已启用</li>
+ *   <li>{@link #DISABLE} - 用户已禁用</li>
+ * </ul>
+ * </p>
+ *
+ * @see BUserInfo
  */
 public enum BUserStatus {
     ENABLE, DISABLE

@@ -6,10 +6,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
+/**
+ * Shell命令执行工具类。
+ * <p>
+ * 提供通过Runtime.exec()执行Shell命令的能力，支持普通用户和Root权限执行。
+ * 执行结果封装在 {@link CommandResult} 中，包含退出码和输出信息。
+ * <p>
+ * 注意：此类为纯工具类，构造函数私有，禁止实例化。
+ */
 public class ShellUtils {
+    /** su命令（获取Root权限） */
     public static final String COMMAND_SU = "su";
+    /** sh命令（普通Shell） */
     public static final String COMMAND_SH = "sh";
+    /** exit命令 */
     public static final String COMMAND_EXIT = "exit\n";
+    /** 命令行结束符 */
     public static final String COMMAND_LINE_END = "\n";
 
 
@@ -19,9 +31,9 @@ public class ShellUtils {
 
 
     /**
-     * check whether has root permission
+     * 检查是否具有Root权限。
      *
-     * @return
+     * @return 有Root权限返回true
      */
     public static boolean checkRootPermission() {
         return execCommand("echo root", true, false).result == 0;
@@ -29,11 +41,11 @@ public class ShellUtils {
 
 
     /**
-     * execute shell command, default return result msg
+     * 执行单条Shell命令，返回结果信息。
      *
-     * @param command command
-     * @param isRoot  whether need to run with root
-     * @return
+     * @param command 命令字符串
+     * @param isRoot  是否以Root权限执行
+     * @return 命令执行结果
      * @see ShellUtils#execCommand(String[], boolean, boolean)
      */
     public static CommandResult execCommand(String command, boolean isRoot) {
@@ -42,11 +54,11 @@ public class ShellUtils {
 
 
     /**
-     * execute shell commands, default return result msg
+     * 执行多条Shell命令（列表形式），返回结果信息。
      *
-     * @param commands command list
-     * @param isRoot   whether need to run with root
-     * @return
+     * @param commands 命令列表
+     * @param isRoot   是否以Root权限执行
+     * @return 命令执行结果
      * @see ShellUtils#execCommand(String[], boolean, boolean)
      */
     public static CommandResult execCommand(List<String> commands, boolean isRoot) {
@@ -54,11 +66,11 @@ public class ShellUtils {
     }
 
     /**
-     * execute shell commands, default return result msg
+     * 执行多条Shell命令（数组形式），返回结果信息。
      *
-     * @param commands command array
-     * @param isRoot   whether need to run with root
-     * @return
+     * @param commands 命令数组
+     * @param isRoot   是否以Root权限执行
+     * @return 命令执行结果
      * @see ShellUtils#execCommand(String[], boolean, boolean)
      */
     public static CommandResult execCommand(String[] commands, boolean isRoot) {
@@ -67,12 +79,12 @@ public class ShellUtils {
 
 
     /**
-     * execute shell command
+     * 执行单条Shell命令。
      *
-     * @param command         command
-     * @param isRoot          whether need to run with root
-     * @param isNeedResultMsg whether need result msg
-     * @return
+     * @param command         命令字符串
+     * @param isRoot          是否以Root权限执行
+     * @param isNeedResultMsg 是否需要返回执行结果信息
+     * @return 命令执行结果
      * @see ShellUtils#execCommand(String[], boolean, boolean)
      */
     public static CommandResult execCommand(String command, boolean isRoot, boolean isNeedResultMsg) {
@@ -89,20 +101,29 @@ public class ShellUtils {
      * @return
      * @see ShellUtils#execCommand(String[], boolean, boolean)
      */
+    /**
+     * 执行多条Shell命令（列表形式）。
+     *
+     * @param commands        命令列表
+     * @param isRoot          是否以Root权限执行
+     * @param isNeedResultMsg 是否需要返回执行结果信息
+     * @return 命令执行结果
+     * @see ShellUtils#execCommand(String[], boolean, boolean)
+     */
     public static CommandResult execCommand(List<String> commands, boolean isRoot, boolean isNeedResultMsg) {
         return execCommand(commands == null ? null : commands.toArray(new String[]{}), isRoot, isNeedResultMsg);
     }
 
     /**
-     * execute shell commands
+     * 执行Shell命令数组的核心方法。
+     * <p>
+     * 通过Runtime.exec()创建Shell进程，依次写入命令并执行。
+     * 如果isRoot为true，使用su命令获取Root权限。
      *
-     * @param commands        command array
-     * @param isRoot          whether need to run with root
-     * @param isNeedResultMsg whether need result msg
-     * @return <ul>
-     * <li>if isNeedResultMsg is false, {@link CommandResult#successMsg} is null and
-     * <li>if {@link CommandResult#result} is -1, there maybe some excepiton.</li>
-     * </ul>
+     * @param commands        命令数组
+     * @param isRoot          是否以Root权限执行
+     * @param isNeedResultMsg 是否需要返回执行结果信息
+     * @return 命令执行结果，result为-1表示可能有异常
      */
     public static CommandResult execCommand(String[] commands, boolean isRoot, boolean isNeedResultMsg) {
         int result = -1;
@@ -159,34 +180,39 @@ public class ShellUtils {
 
 
     /**
-     * result of command
-     * <ul>
-     * <li>{@link CommandResult#result} means result of command, 0 means normal, else means error, same to excute in
-     * linux shell</li>
-     * <li>{@link CommandResult#successMsg} means success message of command result</li>
-     * </ul>
+     * Shell命令执行结果类。
+     * <p>
+     * result为命令的退出码，0表示正常执行，其他值表示错误。
+     * successMsg为命令的标准输出内容。
      *
-     * @author <a href="http://www.trinea.cn" target="_blank">Trinea</a> 2013-5-16
+     * @author Trinea
      */
     public static class CommandResult {
 
 
-        /**
-         * result of command
-         **/
+        /** 命令退出码，0为正常 */
         public int result;
-        /**
-         * success message of command result
-         **/
+        /** 命令的标准输出信息 */
         public String successMsg;
 
 
 
+        /**
+         * 仅设置退出码的构造方法。
+         *
+         * @param result 命令退出码
+         */
         public CommandResult(int result) {
             this.result = result;
         }
 
 
+        /**
+         * 设置退出码和输出信息的构造方法。
+         *
+         * @param result     命令退出码
+         * @param successMsg 命令标准输出
+         */
         public CommandResult(int result, String successMsg) {
             this.result = result;
             this.successMsg = successMsg;

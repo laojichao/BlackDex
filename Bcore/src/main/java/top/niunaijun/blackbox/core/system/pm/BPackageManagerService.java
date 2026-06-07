@@ -42,12 +42,18 @@ import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
 
 /**
- * Created by Milk on 4/1/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的包管理服务。
+ * <p>
+ * 该服务是BlackBox框架的核心包管理服务，提供与Android系统PackageManager类似的功能，
+ * 包括应用安装/卸载、组件查询（Activity、Service、Provider、BroadcastReceiver）、
+ * 包信息查询、Intent解析等。内部通过{@link ComponentResolver}管理所有已注册的组件，
+ * 通过{@link Settings}持久化包配置信息。
+ * </p>
+ *
+ * @see BPackage
+ * @see BPackageSettings
+ * @see ComponentResolver
+ * @see Settings
  */
 public class BPackageManagerService extends IBPackageManagerService.Stub implements ISystemService {
     public static final String TAG = "BPackageManagerService";
@@ -60,6 +66,11 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
     final Map<String, BPackageSettings> mPackages = mSettings.mPackages;
     final Object mInstallLock = new Object();
 
+    /**
+     * 获取BPackageManagerService单例。
+     *
+     * @return BPackageManagerService实例
+     */
     public static BPackageManagerService get() {
         return sService;
     }
@@ -68,6 +79,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         mComponentResolver = new ComponentResolver();
     }
 
+    /**
+     * 获取指定包的ApplicationInfo信息。
+     *
+     * @param packageName 包名
+     * @param flags       查询标志
+     * @param userId      目标用户ID
+     * @return ApplicationInfo对象，未找到时返回null
+     */
     @Override
     public ApplicationInfo getApplicationInfo(String packageName, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -92,6 +111,15 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 解析Service对应的ResolveInfo。
+     *
+     * @param intent       查询Intent
+     * @param flags        查询标志
+     * @param resolvedType Intent的MIME类型
+     * @param userId       目标用户ID
+     * @return 匹配的ResolveInfo，未找到时返回null
+     */
     @Override
     public ResolveInfo resolveService(Intent intent, int flags, String resolvedType, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -146,6 +174,15 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 解析Activity对应的ResolveInfo。
+     *
+     * @param intent       查询Intent
+     * @param flags        查询标志
+     * @param resolvedType Intent的MIME类型
+     * @param userId       目标用户ID
+     * @return 最佳匹配的ResolveInfo，未找到时返回null
+     */
     @Override
     public ResolveInfo resolveActivity(Intent intent, int flags, String resolvedType, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -153,12 +190,29 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return chooseBestActivity(intent, resolvedType, flags, resolves);
     }
 
+    /**
+     * 解析ContentProvider对应的ProviderInfo。
+     *
+     * @param authority ContentProvider的authority
+     * @param flags     查询标志
+     * @param userId    目标用户ID
+     * @return ProviderInfo对象，未找到时返回null
+     */
     @Override
     public ProviderInfo resolveContentProvider(String authority, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
         return mComponentResolver.queryProvider(authority, flags, userId);
     }
 
+    /**
+     * 解析Intent对应的ResolveInfo（通用方法）。
+     *
+     * @param intent       查询Intent
+     * @param resolvedType Intent的MIME类型
+     * @param flags        查询标志
+     * @param userId       目标用户ID
+     * @return 最佳匹配的ResolveInfo，未找到时返回null
+     */
     @Override
     public ResolveInfo resolveIntent(Intent intent, String resolvedType, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -240,6 +294,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定包的PackageInfo信息。
+     *
+     * @param packageName 包名
+     * @param flags       查询标志
+     * @param userId      目标用户ID
+     * @return PackageInfo对象，未找到时返回null
+     */
     @Override
     public PackageInfo getPackageInfo(String packageName, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -264,6 +326,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定组件的ServiceInfo信息。
+     *
+     * @param component 组件名
+     * @param flags     查询标志
+     * @param userId    目标用户ID
+     * @return ServiceInfo对象，未找到时返回null
+     */
     @Override
     public ServiceInfo getServiceInfo(ComponentName component, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -279,6 +349,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定组件的ReceiverInfo信息。
+     *
+     * @param component 组件名
+     * @param flags     查询标志
+     * @param userId    目标用户ID
+     * @return ActivityInfo对象，未找到时返回null
+     */
     @Override
     public ActivityInfo getReceiverInfo(ComponentName component, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -294,6 +372,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定组件的ActivityInfo信息。
+     *
+     * @param component 组件名
+     * @param flags     查询标志
+     * @param userId    目标用户ID
+     * @return ActivityInfo对象，未找到时返回null
+     */
     @Override
     public ActivityInfo getActivityInfo(ComponentName component, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -310,6 +396,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定组件的ProviderInfo信息。
+     *
+     * @param component 组件名
+     * @param flags     查询标志
+     * @param userId    目标用户ID
+     * @return ProviderInfo对象，未找到时返回null
+     */
     @Override
     public ProviderInfo getProviderInfo(ComponentName component, int flags, int userId) {
         if (!sUserManager.exists(userId)) return null;
@@ -325,11 +419,25 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return null;
     }
 
+    /**
+     * 获取指定用户已安装的应用列表。
+     *
+     * @param flags  查询标志
+     * @param userId 目标用户ID
+     * @return ApplicationInfo列表
+     */
     @Override
     public List<ApplicationInfo> getInstalledApplications(int flags, int userId) {
         return getInstalledApplicationsListInternal(flags, userId, Binder.getCallingUid());
     }
 
+    /**
+     * 获取指定用户已安装的包列表。
+     *
+     * @param flags  查询标志
+     * @param userId 目标用户ID
+     * @return PackageInfo列表
+     */
     @Override
     public List<PackageInfo> getInstalledPackages(int flags, int userId) {
         final int callingUid = Binder.getCallingUid();
@@ -384,6 +492,16 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 查询匹配指定Intent的Activity列表。
+     *
+     * @param intent       查询Intent
+     * @param flags        查询标志
+     * @param resolvedType Intent的MIME类型
+     * @param userId       目标用户ID
+     * @return 匹配的ResolveInfo列表
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public List<ResolveInfo> queryIntentActivities(Intent intent, int flags, String resolvedType, int userId) throws RemoteException {
         if (!sUserManager.exists(userId)) return Collections.emptyList();
@@ -436,6 +554,16 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return Collections.emptyList();
     }
 
+    /**
+     * 查询匹配指定Intent的BroadcastReceiver列表。
+     *
+     * @param intent       查询Intent
+     * @param flags        查询标志
+     * @param resolvedType Intent的MIME类型
+     * @param userId       目标用户ID
+     * @return 匹配的ResolveInfo列表
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public List<ResolveInfo> queryBroadcastReceivers(Intent intent, int flags, String resolvedType, int userId) throws RemoteException {
         if (!sUserManager.exists(userId)) return Collections.emptyList();
@@ -475,6 +603,16 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 查询指定进程名的ContentProvider列表。
+     *
+     * @param processName 进程名
+     * @param uid         用户ID
+     * @param flags       查询标志
+     * @param userId      目标用户ID
+     * @return ProviderInfo列表
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public List<ProviderInfo> queryContentProviders(String processName, int uid, int flags, int userId) throws RemoteException {
         if (!sUserManager.exists(userId)) return Collections.emptyList();
@@ -486,6 +624,14 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return providers;
     }
 
+    /**
+     * 为指定用户安装APK包。
+     *
+     * @param file   APK文件路径或URI
+     * @param option 安装选项
+     * @param userId 目标用户ID
+     * @return 安装结果
+     */
     @Override
     public InstallResult installPackageAsUser(String file, InstallOption option, int userId) {
         synchronized (mInstallLock) {
@@ -493,6 +639,13 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 为指定用户卸载包。
+     *
+     * @param packageName 包名
+     * @param userId      目标用户ID
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public void uninstallPackageAsUser(String packageName, int userId) throws RemoteException {
         synchronized (mInstallLock) {
@@ -523,6 +676,11 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 卸载所有用户下的指定包。
+     *
+     * @param packageName 包名
+     */
     @Override
     public void uninstallPackage(String packageName) {
         synchronized (mInstallLock) {
@@ -545,6 +703,12 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 删除指定用户及其所有已安装的包。
+     *
+     * @param userId 目标用户ID
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public void deleteUser(int userId) throws RemoteException {
         synchronized (mPackages) {
@@ -554,6 +718,13 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 检查指定包是否为指定用户安装。
+     *
+     * @param packageName 包名
+     * @param userId      目标用户ID
+     * @return 如果已安装返回true，否则返回false
+     */
     @Override
     public boolean isInstalled(String packageName, int userId) {
         if (!sUserManager.exists(userId)) return false;
@@ -565,6 +736,12 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         }
     }
 
+    /**
+     * 获取指定用户已安装的包列表（简化信息）。
+     *
+     * @param userId 目标用户ID
+     * @return InstalledPackage列表
+     */
     @Override
     public List<InstalledPackage> getInstalledPackagesAsUser(int userId) {
         if (!sUserManager.exists(userId)) return Collections.emptyList();
@@ -671,6 +848,12 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return flags;
     }
 
+    /**
+     * 获取指定包的AppId。
+     *
+     * @param packageName 包名
+     * @return AppId，未找到时返回-1
+     */
     public int getAppId(String packageName) {
         BPackageSettings bPackageSettings = mPackages.get(packageName);
         if (bPackageSettings != null)
@@ -682,10 +865,20 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         return mSettings;
     }
 
+    /**
+     * 添加包监听器，用于监听包的安装和卸载事件。
+     *
+     * @param monitor 包监听器
+     */
     public void addPackageMonitor(PackageMonitor monitor) {
         mPackageMonitors.add(monitor);
     }
 
+    /**
+     * 移除包监听器。
+     *
+     * @param monitor 包监听器
+     */
     public void removePackageMonitor(PackageMonitor monitor) {
         mPackageMonitors.add(monitor);
     }

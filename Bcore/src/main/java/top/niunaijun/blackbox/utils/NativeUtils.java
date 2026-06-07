@@ -16,16 +16,32 @@ import java.util.zip.ZipFile;
 
 
 /**
- * Created by Milk on 2/24/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * Native库（SO文件）提取工具类。
+ * <p>
+ * 从APK（ZIP格式）文件中提取与设备CPU架构匹配的native动态库（.so文件），
+ * 并复制到指定目录。支持以下CPU架构：
+ * <ul>
+ *   <li>当前设备的CPU_ABI</li>
+ *   <li>armeabi（作为回退方案）</li>
+ * </ul>
+ * <p>
+ * 如果SO文件已存在且大小相同，则跳过复制以提高性能。
+ *
+ * @author Milk
  */
 public class NativeUtils {
+    /** 日志标签 */
     public static final String TAG = "VirtualM";
 
+    /**
+     * 从APK文件中提取native库到指定目录。
+     * <p>
+     * 优先查找与设备CPU_ABI匹配的SO库，如果未找到则尝试armeabi架构。
+     *
+     * @param apk          APK文件
+     * @param nativeLibDir native库输出目录
+     * @throws Exception 提取过程中的异常
+     */
     public static void copyNativeLib(File apk, File nativeLibDir) throws Exception {
         long startTime = System.currentTimeMillis();
         if (!nativeLibDir.exists()) {
@@ -43,6 +59,18 @@ public class NativeUtils {
     }
 
 
+    /**
+     * 在ZIP文件中查找并复制指定CPU架构的SO文件。
+     * <p>
+     * 遍历ZIP条目，找到匹配"lib/{cpuArch}/"前缀的.so文件并复制到目标目录。
+     * 如果APK中完全没有lib/目录，则视为无native库（返回true快速跳过）。
+     *
+     * @param zipfile      ZIP文件
+     * @param cpuArch      目标CPU架构
+     * @param nativeLibDir 输出目录
+     * @return 找到并复制了SO文件返回true
+     * @throws Exception 复制过程中的异常
+     */
     private static boolean findAndCopyNativeLib(ZipFile zipfile, String cpuArch, File nativeLibDir) throws Exception {
         //Log.d(TAG, "Try to copy plugin's cup arch: " + cpuArch);
         boolean findLib = false;
@@ -94,6 +122,14 @@ public class NativeUtils {
         return findSo;
     }
 
+    /**
+     * 使用缓冲流将输入内容复制到输出流。
+     *
+     * @param buffer 缓冲区
+     * @param input  输入流
+     * @param output 输出流
+     * @throws IOException 复制过程中的IO异常
+     */
     private static void copySo(byte[] buffer, InputStream input, OutputStream output) throws IOException {
         BufferedInputStream bufferedInput = new BufferedInputStream(input);
         BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);

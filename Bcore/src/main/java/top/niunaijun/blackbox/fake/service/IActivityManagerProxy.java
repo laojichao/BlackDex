@@ -17,12 +17,28 @@ import top.niunaijun.blackbox.utils.compat.BuildCompat;
 
 
 /**
- * Created by Milk on 3/30/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IActivityManager 系统服务代理，拦截 Activity/Service/Broadcast 等核心系统调用。
+ * <p>
+ * 通过替换 ActivityManagerNative（5.0-7.1）或 ActivityManagerOreo（8.0+）中的
+ * Singleton 实例，代理 IActivityManager 接口的所有方法调用。
+ * </p>
+ * <p>
+ * 主要拦截项：
+ * <ul>
+ *   <li>getContentProvider - 拦截 ContentProvider 获取并注入虚拟环境代理</li>
+ *   <li>startService/stopService/bindService/unbindService - 阻止直接服务操作</li>
+ *   <li>broadcastIntent - 阻止直接广播发送</li>
+ *   <li>registerReceiver - 阻止直接注册广播接收器</li>
+ *   <li>getIntentSender - 阻止 PendingIntent 创建</li>
+ * </ul>
+ * </p>
+ * <p>
+ * 同时通过 {@link ScanClass} 引用 {@link ActivityManagerCommonProxy} 的公共方法钩子。
+ * </p>
+ *
+ * @author Milk
+ * @see ActivityManagerCommonProxy
+ * @see ContentProviderDelegate
  */
 @ScanClass(ActivityManagerCommonProxy.class)
 public class IActivityManagerProxy extends ClassInvocationStub {
@@ -55,6 +71,10 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         return false;
     }
 
+    /**
+     * 拦截 getContentProvider 方法，对 settings/media/telephony 的 ContentProvider
+     * 注入虚拟环境代理，其他 Provider 使用宿主包名查询。
+     */
     @ProxyMethod(name = "getContentProvider")
     public static class GetContentProvider extends MethodHook {
 
@@ -91,6 +111,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 startService，返回 0 阻止在虚拟环境中直接调用系统服务 */
     @ProxyMethod(name = "startService")
     public static class StartService extends MethodHook {
         @Override
@@ -99,6 +120,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 stopService，返回 0 阻止在虚拟环境中直接调用系统服务 */
     @ProxyMethod(name = "stopService")
     public static class StopService extends MethodHook {
         @Override
@@ -107,6 +129,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 bindService，返回 0 阻止在虚拟环境中直接绑定系统服务 */
     @ProxyMethod(name = "bindService")
     public static class BindService extends MethodHook {
 
@@ -116,6 +139,10 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /**
+     * 拦截 bindIsolatedService（Android 10.0+），继承 BindService 的拦截逻辑，
+     * 并在前置钩子中将 instanceName 参数置 null。
+     */
     // 10.0
     @ProxyMethod(name = "bindIsolatedService")
     public static class BindIsolatedService extends BindService {
@@ -127,6 +154,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 unbindService，返回 0 阻止在虚拟环境中直接解绑系统服务 */
     @ProxyMethod(name = "unbindService")
     public static class UnbindService extends MethodHook {
 
@@ -136,6 +164,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 getIntentSender，返回 null 阻止创建 PendingIntent */
     @ProxyMethod(name = "getIntentSender")
     public static class GetIntentSender extends MethodHook {
         @Override
@@ -152,6 +181,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
     public static class BroadcastIntentWithFeature extends BroadcastIntent {
     }
 
+    /** 拦截 broadcastIntent，返回 0 阻止在虚拟环境中直接发送广播 */
     @ProxyMethod(name = "broadcastIntent")
     public static class BroadcastIntent extends MethodHook {
         @Override
@@ -169,6 +199,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         }
     }
 
+    /** 拦截 registerReceiver，返回 null 阻止在虚拟环境中直接注册广播接收器 */
     @ProxyMethod(name = "registerReceiver")
     public static class RegisterReceiver extends MethodHook {
 

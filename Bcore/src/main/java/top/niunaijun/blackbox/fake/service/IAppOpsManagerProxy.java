@@ -16,12 +16,16 @@ import top.niunaijun.blackbox.fake.hook.ProxyMethod;
 import top.niunaijun.blackbox.utils.MethodParameterUtils;
 
 /**
- * Created by Milk on 4/2/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IAppOpsManager 系统服务代理，拦截应用操作权限检查相关调用。
+ * <p>
+ * 通过替换 ServiceManager 中 {@link Context#APP_OPS_SERVICE} 的 Binder 对象以及
+ * AppOpsManager 实例内部的 mService 字段实现拦截。
+ * 在所有方法调用前自动替换包名参数和用户 ID 参数。
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
+ * @see MethodParameterUtils
  */
 public class IAppOpsManagerProxy extends BinderInvocationStub {
     public IAppOpsManagerProxy() {
@@ -47,6 +51,9 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         replaceSystemService(Context.APP_OPS_SERVICE);
     }
 
+    /**
+     * 全局拦截：替换第一个参数为宿主包名，最后一个参数为虚拟用户 ID。
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         MethodParameterUtils.replaceFirstAppPkg(args);
@@ -59,6 +66,9 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         return false;
     }
 
+    /**
+     * 拦截 checkPackage 方法，直接返回 MODE_ALLOWED 允许操作。
+     */
     @ProxyMethod(name = "checkPackage")
     public static class CheckPackage extends MethodHook {
         @Override
@@ -68,6 +78,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /** 拦截 checkOperation，透传给原始方法 */
     @ProxyMethod(name = "checkPackage")
     public static class CheckOperation extends MethodHook {
         @Override
@@ -76,6 +87,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /** 拦截 noteOperation，透传给原始方法 */
     @ProxyMethod(name = "noteOperation")
     public static class NoteOperation extends MethodHook {
         @Override

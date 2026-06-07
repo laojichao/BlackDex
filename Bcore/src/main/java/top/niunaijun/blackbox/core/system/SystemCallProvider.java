@@ -12,12 +12,16 @@ import androidx.annotation.Nullable;
 import top.niunaijun.blackbox.utils.compat.BundleCompat;
 
 /**
- * Created by Milk on 3/31/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 系统调用 ContentProvider，是 BlackBox 虚拟系统与宿主进程之间的通信入口。
+ * <p>
+ * 在 {@link #onCreate()} 中触发虚拟系统的初始化。
+ * 通过 {@link #call(String, String, Bundle)} 方法响应 "VM" 类型的请求，
+ * 为虚拟进程提供所需的系统服务 Binder 对象。
+ * </p>
+ *
+ * @author Milk
+ * @see BlackBoxSystem
+ * @see ServiceManager
  */
 public class SystemCallProvider extends ContentProvider {
     @Override

@@ -26,12 +26,16 @@ import top.niunaijun.blackbox.utils.provider.ProviderCall;
 import top.niunaijun.blackbox.core.IBActivityThread;
 
 /**
- * Created by Milk on 4/2/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟进程管理器，负责管理 BlackBox 框架中所有虚拟应用进程的生命周期。
+ * <p>
+ * 模拟 Android 系统的进程管理机制，负责虚拟进程的创建、查找、销毁等操作。
+ * 每个虚拟进程通过 {@link ProcessRecord} 进行记录，支持多用户环境下
+ * 以包名+进程名+用户ID为索引的进程管理。
+ * </p>
+ *
+ * @author Milk
+ * @see ProcessRecord
+ * @see ProxyManifest
  */
 public class BProcessManager {
     public static final String TAG = "BProcessManager";
@@ -41,10 +45,30 @@ public class BProcessManager {
     private final List<ProcessRecord> mPidsSelfLocked = new ArrayList<>();
     private final Object mProcessLock = new Object();
 
+    /**
+     * 获取进程管理器单例实例。
+     *
+     * @return 进程管理器实例
+     */
     public static BProcessManager get() {
         return sVProcessManager;
     }
 
+    /**
+     * 启动并锁定一个虚拟进程。如果该进程已存在且已初始化，则直接返回已有的进程记录。
+     * <p>
+     * 流程：检查进程是否已存在 -> 分配虚拟PID -> 创建进程记录 -> 初始化进程 -> 绑定客户端。
+     * 如果初始化失败，会自动清理已创建的进程记录。
+     * </p>
+     *
+     * @param packageName 应用包名
+     * @param processName 进程名称
+     * @param userId      虚拟用户ID
+     * @param bpid        虚拟进程ID，传 -1 表示自动分配
+     * @param callingUid  调用方的UID
+     * @param callingPid  调用方的PID
+     * @return 创建成功返回 {@link ProcessRecord}，失败返回 null
+     */
     public ProcessRecord startProcessLocked(String packageName, String processName, int userId, int bpid, int callingUid, int callingPid) {
         ApplicationInfo info = BPackageManagerService.get().getApplicationInfo(packageName, 0, userId);
         if (info == null)
@@ -95,6 +119,11 @@ public class BProcessManager {
         return app;
     }
 
+    /**
+     * 获取一个未被占用的虚拟进程PID。
+     *
+     * @return 可用的虚拟PID，如果没有可用PID返回 -1
+     */
     private int getUsingBPidL() {
         ActivityManager manager = (ActivityManager) BlackBoxCore.getContext().getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = manager.getRunningAppProcesses();
@@ -113,6 +142,14 @@ public class BProcessManager {
         return -1;
     }
 
+    /**
+     * 重启指定应用的虚拟进程。通过当前调用方的PID查找进程记录，
+     * 如果找不到则解析出虚拟PID后重新启动进程。
+     *
+     * @param packageName 应用包名
+     * @param processName 进程名称
+     * @param userId      虚拟用户ID
+     */
     public void restartAppProcess(String packageName, String processName, int userId) {
         synchronized (mProcessLock) {
             int callingUid = Binder.getCallingUid();
@@ -187,6 +224,11 @@ public class BProcessManager {
         app.initLock.open();
     }
 
+    /**
+     * 当虚拟进程死亡时的回调处理，清理进程相关的所有记录。
+     *
+     * @param record 死亡的进程记录
+     */
     public void onProcessDie(ProcessRecord record) {
         synchronized (mProcessLock) {
             record.kill();
@@ -197,6 +239,14 @@ public class BProcessManager {
         }
     }
 
+    /**
+     * 根据包名、进程名和用户ID查找虚拟进程记录。
+     *
+     * @param packageName 应用包名
+     * @param processName 进程名称
+     * @param userId      虚拟用户ID
+     * @return 找到的进程记录，未找到返回 null
+     */
     public ProcessRecord findProcessRecord(String packageName, String processName, int userId) {
         synchronized (mProcessLock) {
             int appId = BPackageManagerService.get().getAppId(packageName);
@@ -208,6 +258,11 @@ public class BProcessManager {
         }
     }
 
+    /**
+     * 杀死指定包名对应的所有虚拟进程（所有用户空间）。
+     *
+     * @param packageName 要杀死的应用包名
+     */
     public void killAllByPackageName(String packageName) {
         synchronized (mProcessLock) {
             synchronized (mPidsSelfLocked) {
@@ -227,6 +282,12 @@ public class BProcessManager {
         }
     }
 
+    /**
+     * 杀死指定包名在指定用户空间下的所有虚拟进程。
+     *
+     * @param packageName 应用包名
+     * @param userId      虚拟用户ID
+     */
     public void killPackageAsUser(String packageName, int userId) {
         synchronized (mProcessLock) {
             int buid = BUserHandle.getUid(userId, BPackageManagerService.get().getAppId(packageName));
@@ -241,6 +302,12 @@ public class BProcessManager {
     }
 
 
+    /**
+     * 根据调用方PID获取对应的虚拟用户ID。
+     *
+     * @param callingPid 调用方的PID
+     * @return 用户ID，如果找不到对应进程则返回 0
+     */
     public int getUserIdByCallingPid(int callingPid) {
         synchronized (mProcessLock) {
             ProcessRecord callingProcess = BProcessManager.get().findProcessByPid(callingPid);
@@ -251,6 +318,12 @@ public class BProcessManager {
         }
     }
 
+    /**
+     * 根据真实PID查找虚拟进程记录。
+     *
+     * @param pid 真实进程PID
+     * @return 找到的进程记录，未找到返回 null
+     */
     public ProcessRecord findProcessByPid(int pid) {
         synchronized (mPidsSelfLocked) {
             for (ProcessRecord processRecord : mPidsSelfLocked) {
@@ -276,6 +349,13 @@ public class BProcessManager {
         return processName;
     }
 
+    /**
+     * 根据进程名获取真实PID。
+     *
+     * @param context     上下文
+     * @param processName 进程名称
+     * @return 进程PID，未找到返回 -1
+     */
     public static int getPid(Context context, String processName) {
         try {
             ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);

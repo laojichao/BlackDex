@@ -24,12 +24,19 @@ import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.Slog;
 
 /**
- * Created by Milk on 4/13/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的包设置管理器。
+ * <p>
+ * 该类负责管理虚拟环境中所有已安装包的配置信息，包括：
+ * <ul>
+ *   <li>包配置的创建和查询</li>
+ *   <li>AppId的分配和持久化</li>
+ *   <li>包目录的扫描和加载</li>
+ *   <li>系统应用的版本更新检测</li>
+ * </ul>
+ * </p>
+ *
+ * @see BPackageSettings
+ * @see BPackageManagerService
  */
 /*public*/ class Settings {
     public static final String TAG = "Settings";
@@ -38,12 +45,22 @@ import top.niunaijun.blackbox.utils.Slog;
     private final Map<String, Integer> mAppIds = new HashMap<>();
     private int mCurrUid = 0;
 
+    /**
+     * 创建Settings实例，加载已持久化的AppId配置。
+     */
     public Settings() {
         synchronized (mPackages) {
             loadUidLP();
         }
     }
 
+    /**
+     * 获取或创建指定包名的包设置信息。
+     *
+     * @param name      包名
+     * @param aPackage  系统解析的包信息
+     * @return 包设置信息对象
+     */
     BPackageSettings getPackageLPw(String name, PackageParser.Package aPackage) {
         BPackageSettings pkgSettings;
         BPackageSettings origSettings = new BPackageSettings();
@@ -142,6 +159,10 @@ import top.niunaijun.blackbox.utils.Slog;
         }
     }
 
+    /**
+     * 扫描应用根目录，加载所有已安装包的配置信息。
+     * 对于系统应用，会检测源APK路径是否变化并触发更新。
+     */
     public void scanPackage() {
         synchronized (mPackages) {
             File appRootDir = BEnvironment.getAppRootDir();

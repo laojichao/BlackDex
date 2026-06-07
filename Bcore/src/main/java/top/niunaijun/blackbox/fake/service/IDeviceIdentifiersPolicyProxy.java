@@ -12,12 +12,16 @@ import top.niunaijun.blackbox.fake.hook.ProxyMethod;
 import top.niunaijun.blackbox.utils.Md5Utils;
 
 /**
- * Created by Milk on 4/3/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IDeviceIdentifiersPolicy 系统服务代理（Android 8.0+），拦截设备标识查询。
+ * <p>
+ * 通过替换 ServiceManager 中 "device_identifiers" 服务的 Binder 对象实现拦截。
+ * 将 getSerialForPackage 的返回值替换为宿主包名的 MD5 哈希，防止虚拟环境中
+ * 序列号泄露真实设备信息。
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
+ * @see Md5Utils
  */
 public class IDeviceIdentifiersPolicyProxy extends BinderInvocationStub {
 
@@ -40,6 +44,9 @@ public class IDeviceIdentifiersPolicyProxy extends BinderInvocationStub {
         return false;
     }
 
+    /**
+     * 拦截设备序列号查询，返回宿主包名的 MD5 哈希值作为伪装序列号。
+     */
     @ProxyMethod(name = "getSerialForPackage")
     public static class GetSerialForPackage extends MethodHook {
         @Override

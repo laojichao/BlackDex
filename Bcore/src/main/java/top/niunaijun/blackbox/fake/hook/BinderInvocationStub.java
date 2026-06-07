@@ -14,16 +14,30 @@ import java.util.Map;
 import reflection.android.os.ServiceManager;
 
 /**
- * Created by Milk on 3/30/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 基于 Binder 的服务代理桩基类。
+ * <p>
+ * 继承 {@link ClassInvocationStub} 并实现 {@link IBinder} 接口，用于代理系统服务的
+ * Binder 对象。通过替换 ServiceManager 中缓存的 IBinder 引用，使所有对该服务的
+ * IPC 调用都经过本代理。
+ * </p>
+ * <p>
+ * IBinder 接口的默认实现委托给原始 Binder 对象（{@link #mBaseBinder}），
+ * 子类通过 {@link #replaceSystemService(String)} 方法完成服务替换。
+ * </p>
+ *
+ * @author Milk
+ * @see ClassInvocationStub
+ * @see ServiceManager#sCache
  */
 public abstract class BinderInvocationStub extends ClassInvocationStub implements IBinder {
+    /** 被代理的原始 IBinder 对象 */
     private IBinder mBaseBinder;
 
+    /**
+     * 构造方法，传入原始 Binder 对象。
+     *
+     * @param baseBinder 被代理的原始 IBinder
+     */
     public BinderInvocationStub(IBinder baseBinder) {
         mBaseBinder = baseBinder;
     }
@@ -80,6 +94,15 @@ public abstract class BinderInvocationStub extends ClassInvocationStub implement
     }
 
 
+    /**
+     * 替换 ServiceManager 缓存中的系统服务。
+     * <p>
+     * 将本代理实例放入 ServiceManager.sCache 中对应 name 的位置，
+     * 使后续对该服务名称的 getService 调用返回本代理。
+     * </p>
+     *
+     * @param name 系统服务名称（如 "package"、"alarm"、"mount" 等）
+     */
     protected void replaceSystemService(String name) {
         Map<String, IBinder> services = ServiceManager.sCache.get();
         services.put(name, this);

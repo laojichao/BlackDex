@@ -27,8 +27,24 @@ import androidx.annotation.Nullable;
 
 import top.niunaijun.blackbox.utils.Reflector;
 
+/**
+ * Instrumentation 委托基类，将所有 Instrumentation 方法调用转发给被代理的原始实例。
+ * <p>
+ * 采用装饰器模式，持有 {@link #mBaseInstrumentation} 引用原始 Instrumentation，
+ * 所有生命周期回调、Activity 启动等方法默认委托给原始实现。
+ * 子类（如 {@link AppInstrumentation}）可覆写特定方法注入自定义逻辑。
+ * </p>
+ * <p>
+ * 同时提供多个 {@code execStartActivity} 重载方法，通过反射调用原始 Instrumentation
+ * 中隐藏的 execStartActivity 方法，兼容不同 Android 版本的参数签名。
+ * </p>
+ *
+ * @author Milk
+ * @see AppInstrumentation
+ */
 public class BaseInstrumentationDelegate extends Instrumentation {
 
+    /** 被代理的原始 Instrumentation 实例引用 */
     protected Instrumentation mBaseInstrumentation;
 
 
@@ -342,6 +358,19 @@ public class BaseInstrumentationDelegate extends Instrumentation {
         return mBaseInstrumentation.getUiAutomation();
     }
 
+    /**
+     * 启动 Activity，通过反射调用原始 Instrumentation 的隐藏 execStartActivity 方法。
+     *
+     * @param context  上下文
+     * @param binder   当前 Activity 的 IBinder
+     * @param binder1  目标 Activity 的 IBinder（token）
+     * @param activity 发起启动的 Activity
+     * @param intent   启动 Intent
+     * @param i        请求码
+     * @param bundle   附加选项
+     * @return 启动结果
+     * @throws Throwable 反射调用异常
+     */
     public ActivityResult execStartActivity(Context context, IBinder binder, IBinder binder1, Activity activity, Intent intent, int i, Bundle bundle) throws Throwable {
         return invokeExecStartActivity(mBaseInstrumentation,
                 Context.class,
@@ -408,6 +437,17 @@ public class BaseInstrumentationDelegate extends Instrumentation {
                 UserHandle.class).callByCaller(mBaseInstrumentation, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle, userHandle});
     }
 
+    /**
+     * 查找并缓存原始 Instrumentation 类中的 execStartActivity 方法。
+     * <p>
+     * 向上遍历类继承链，直到找到匹配参数签名的 execStartActivity 方法。
+     * </p>
+     *
+     * @param obj  目标 Instrumentation 实例
+     * @param args 方法参数类型数组
+     * @return 反射调用器
+     * @throws NoSuchMethodException 未找到匹配方法
+     */
     private static Reflector invokeExecStartActivity(Object obj, Class<?>... args) throws NoSuchMethodException {
         Class<?> cls = obj.getClass();
         while (cls != null) {

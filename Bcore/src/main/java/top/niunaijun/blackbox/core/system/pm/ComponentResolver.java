@@ -16,12 +16,15 @@ import top.niunaijun.blackbox.utils.Slog;
 
 
 /**
- * Created by Milk on 4/14/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的组件解析器。
+ * <p>
+ * 该类负责管理虚拟环境中所有已注册的应用组件（Activity、Service、Provider、BroadcastReceiver），
+ * 提供组件的添加、移除和基于Intent的查询解析功能。内部使用{@link IntentResolver}
+ * 对不同类型组件分别进行Intent匹配解析。
+ * </p>
+ *
+ * @see BPackage
+ * @see IntentResolver
  */
 public class ComponentResolver {
     public static final String TAG = "ComponentResolver";
@@ -52,9 +55,17 @@ public class ComponentResolver {
      */
     private final ArrayMap<String, BPackage.Provider> mProvidersByAuthority = new ArrayMap<>();
 
+    /**
+     * 创建组件解析器实例。
+     */
     public ComponentResolver() {
     }
 
+    /**
+     * 添加指定包的所有组件。
+     *
+     * @param pkg 要添加组件的包
+     */
     void addAllComponents(BPackage pkg) {
         final ArrayList<BPackage.ActivityIntentInfo> newIntents = new ArrayList<>();
         synchronized (mLock) {
@@ -65,6 +76,11 @@ public class ComponentResolver {
         }
     }
 
+    /**
+     * 移除指定包的所有组件。
+     *
+     * @param pkg 要移除组件的包
+     */
     void removeAllComponents(BPackage pkg) {
         synchronized (mLock) {
             removeAllComponentsLocked(pkg);

@@ -8,16 +8,34 @@ import dalvik.system.DexFile;
 import top.niunaijun.blackbox.utils.Reflector;
 
 /**
- * Created by Milk on 2021/5/16.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * DexFile兼容性工具类。
+ * <p>
+ * 通过反射访问ClassLoader内部的DexFile对象，提供以下功能：
+ * <ul>
+ *   <li>获取ClassLoader加载的所有类名列表</li>
+ *   <li>获取DexFile的mCookie（native指针）列表</li>
+ * </ul>
+ * <p>
+ * 兼容Android 6.0（M）前后的DexFile内部结构变化：
+ * <ul>
+ *   <li>Android 6.0+：mCookie为long[]数组（支持multidex）</li>
+ *   <li>Android 6.0以下：mCookie为单个long值</li>
+ * </ul>
+ * <p>
+ * 通过ClassLoader -> pathList -> dexElements -> dexFile的反射链访问内部结构。
+ *
+ * @author Milk
  */
 public class DexFileCompat {
+    /** 日志标签 */
     public static final String TAG = "DexFileCompat";
 
+    /**
+     * 获取ClassLoader中所有DexFile加载的类名列表。
+     *
+     * @param classLoader 目标ClassLoader
+     * @return 类名列表
+     */
     public static List<String> getClassNameList(ClassLoader classLoader) {
         List<String> allClass = new ArrayList<>();
         try {
@@ -54,6 +72,12 @@ public class DexFileCompat {
         return null;
     }
 
+    /**
+     * 获取ClassLoader中所有DexFile的Cookie（native指针）列表。
+     *
+     * @param classLoader 目标ClassLoader
+     * @return Cookie值列表
+     */
     public static List<Long> getCookies(ClassLoader classLoader) {
         List<Long> cookies = new ArrayList<>();
         List<DexFile> dexFiles = getDexFiles(classLoader);
@@ -63,6 +87,14 @@ public class DexFileCompat {
         return cookies;
     }
 
+    /**
+     * 获取单个DexFile的Cookie（native指针）列表。
+     * <p>
+     * Android 6.0+返回long[]中的所有值，6.0以下返回单个long。
+     *
+     * @param dexFile DexFile对象
+     * @return Cookie值列表
+     */
     public static List<Long> getCookies(DexFile dexFile) {
         List<Long> cookies = new ArrayList<>();
         if (dexFile == null)

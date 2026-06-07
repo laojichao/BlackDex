@@ -4,33 +4,52 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 /**
- * Created by Milk on 2021/5/22.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * DEX Dump 结果实体类（Parcelable）。
+ * <p>
+ * 封装 DEX 脱壳操作的结果信息，支持三种状态：运行中、成功、失败。
+ * 通过 Intent 在进程间传递，用于通知 UI 层 Dump 进度和结果。
+ *
+ * @author Milk
  */
 public class DumpResult implements Parcelable {
+    /** 日志标签 */
     public static final String TAG = "DumpResult";
     private static final int STATUS_RUNNING = 0;
     private static final int STATUS_SUCCESS = 1;
     private static final int STATUS_FAIL = 2;
 
+    /** 目标应用包名 */
     public String packageName;
+    /** 结果消息（成功或失败描述） */
     public String msg;
+    /** DEX 文件输出目录 */
     public String dir;
 
     private int status = STATUS_RUNNING;
+    /** 总计需要处理的 DEX 数量 */
     public int totalProcess;
+    /** 当前已处理的 DEX 数量 */
     public int currProcess;
 
+    /**
+     * 标记 Dump 失败。
+     *
+     * @param msg 错误消息
+     * @return 当前实例（支持链式调用）
+     */
     public DumpResult dumpError(String msg) {
         this.msg = msg;
         this.status = STATUS_FAIL;
         return this;
     }
 
+    /**
+     * 更新 Dump 进度。
+     *
+     * @param totalProcess 总计 DEX 数量
+     * @param currProcess  当前已处理数量
+     * @return 当前实例（支持链式调用）
+     */
     public DumpResult dumpProcess(int totalProcess, int currProcess) {
         this.totalProcess = totalProcess;
         this.currProcess = currProcess;
@@ -38,19 +57,23 @@ public class DumpResult implements Parcelable {
         return this;
     }
 
+    /** 标记 Dump 成功。@return 当前实例（支持链式调用） */
     public DumpResult dumpSuccess() {
         this.status = STATUS_SUCCESS;
         return this;
     }
 
+    /** @return 是否成功 */
     public boolean isSuccess() {
         return status == STATUS_SUCCESS;
     }
 
+    /** @return 是否失败 */
     public boolean isFail() {
         return status == STATUS_FAIL;
     }
 
+    /** @return 是否正在运行 */
     public boolean isRunning() {
         return status == STATUS_RUNNING;
     }

@@ -34,14 +34,22 @@ import top.niunaijun.blackbox.utils.Slog;
 import top.niunaijun.blackbox.BlackBoxCore;
 
 /**
- * Created by Milk on 3/31/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟应用进程线程管理类。
+ * <p>
+ * 负责虚拟环境中应用的完整生命周期管理，包括：
+ * <ul>
+ *     <li>进程初始化与绑定（{@link #initProcess}、{@link #bindApplication}）</li>
+ *     <li>Application 创建与 LoadedApk 配置</li>
+ *     <li>ContentProvider 注册与 DEX Dump 触发</li>
+ *     <li>应用信息查询（包名、进程名、UID 等）</li>
+ * </ul>
+ *
+ * @author Milk
+ * @see BlackBoxCore
+ * @see VMCore
  */
 public class BActivityThread extends IBActivityThread.Stub {
+    /** 日志标签 */
     public static final String TAG = "BActivityThread";
 
     private static BActivityThread sBActivityThread;
@@ -50,6 +58,11 @@ public class BActivityThread extends IBActivityThread.Stub {
     private AppConfig mAppConfig;
     private final List<ProviderInfo> mProviders = new ArrayList<>();
 
+    /**
+     * 获取 BActivityThread 单例（双重检查锁定）。
+     *
+     * @return BActivityThread 实例
+     */
     public static BActivityThread currentActivityThread() {
         if (sBActivityThread == null) {
             synchronized (BActivityThread.class) {
@@ -61,14 +74,25 @@ public class BActivityThread extends IBActivityThread.Stub {
         return sBActivityThread;
     }
 
+    /**
+     * 获取当前虚拟应用的配置信息。
+     *
+     * @return AppConfig 配置，未初始化时返回 {@code null}
+     */
     public static synchronized AppConfig getAppConfig() {
         return currentActivityThread().mAppConfig;
     }
 
+    /**
+     * 获取当前虚拟应用注册的 ContentProvider 列表。
+     *
+     * @return ProviderInfo 列表
+     */
     public static List<ProviderInfo> getProviders() {
         return currentActivityThread().mProviders;
     }
 
+    /** @return 当前虚拟应用进程名，未初始化时返回 {@code null} */
     public static String getAppProcessName() {
         if (getAppConfig() != null) {
             return getAppConfig().processName;
@@ -79,6 +103,7 @@ public class BActivityThread extends IBActivityThread.Stub {
         }
     }
 
+    /** @return 当前虚拟应用包名，未初始化时返回 {@code null} */
     public static String getAppPackageName() {
         if (getAppConfig() != null) {
             return getAppConfig().packageName;
@@ -89,30 +114,43 @@ public class BActivityThread extends IBActivityThread.Stub {
         }
     }
 
+    /** @return 当前虚拟应用的 Application 实例 */
     public static Application getApplication() {
         return currentActivityThread().mInitialApplication;
     }
 
+    /** @return 虚拟应用 PID，未初始化时返回 -1 */
     public static int getAppPid() {
         return getAppConfig() == null ? -1 : getAppConfig().bpid;
     }
 
+    /** @return 虚拟应用 UID，未初始化时返回 10000 */
     public static int getAppUid() {
         return getAppConfig() == null ? 10000 : getAppConfig().buid;
     }
 
+    /** @return 虚拟应用基础 UID，未初始化时返回 10000 */
     public static int getBaseAppUid() {
         return getAppConfig() == null ? 10000 : getAppConfig().baseBUid;
     }
 
+    /** @return 真实 UID，未初始化时返回 -1 */
     public static int getUid() {
         return getAppConfig() == null ? -1 : getAppConfig().uid;
     }
 
+    /** @return 用户 ID，未初始化时返回 0 */
     public static int getUserId() {
         return getAppConfig() == null ? 0 : getAppConfig().userId;
     }
 
+    /**
+     * 初始化虚拟进程。
+     * <p>每个虚拟进程只能初始化一次，重复调用将抛出异常。</p>
+     *
+     * @param appConfig 应用配置信息
+     * @throws RuntimeException 如果进程已初始化
+     */
     public void initProcess(AppConfig appConfig) {
         if (this.mAppConfig != null) {
             throw new RuntimeException("reject init process: " + appConfig.processName + ", this process is : " + this.mAppConfig.processName);
@@ -120,10 +158,18 @@ public class BActivityThread extends IBActivityThread.Stub {
         this.mAppConfig = appConfig;
     }
 
+    /** @return 应用是否已完成绑定（bindApplication） */
     public boolean isInit() {
         return mBoundApplication != null;
     }
 
+    /**
+     * 绑定应用到虚拟环境。
+     * <p>如果当前不在主线程，会自动切换到主线程执行并阻塞等待完成。</p>
+     *
+     * @param packageName 目标应用包名
+     * @param processName 目标进程名
+     */
     public void bindApplication(final String packageName, final String processName) {
         if (mAppConfig == null) {
             return;
@@ -140,6 +186,17 @@ public class BActivityThread extends IBActivityThread.Stub {
         }
     }
 
+    /**
+     * 在主线程中处理应用绑定的核心逻辑。
+     * <p>
+     * 该方法完成以下关键步骤：
+     * 1. 查询包信息和 Provider 列表
+     * 2. 创建包上下文并配置 LoadedApk
+     * 3. 初始化 IO 重定向和 VMCore
+     * 4. 创建 Application 实例
+     * 5. 触发 DEX Dump（仅主进程）
+     * </p>
+     */
     private synchronized void handleBindApplication(String packageName, String processName) {
         DumpResult result = new DumpResult();
         result.packageName = packageName;
@@ -213,6 +270,10 @@ public class BActivityThread extends IBActivityThread.Stub {
         }
     }
 
+    /**
+     * 在独立线程中执行 DEX Dump 操作。
+     * <p>等待 500ms 确保应用初始化完成后，通过 VMCore 进行 cookie Dump，最终通知监听器结果。</p>
+     */
     private void handleDumpDex(String packageName, DumpResult result, ClassLoader classLoader) {
         new Thread(() -> {
             try {
@@ -256,6 +317,7 @@ public class BActivityThread extends IBActivityThread.Stub {
         }
     }
 
+    /** 应用绑定数据内部类，存储进程名、ApplicationInfo、LoadedApk 和 Provider 列表 */
     public static class AppBindData {
         String processName;
         ApplicationInfo appInfo;

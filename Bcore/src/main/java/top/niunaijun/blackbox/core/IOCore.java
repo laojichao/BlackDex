@@ -17,12 +17,14 @@ import top.niunaijun.blackbox.app.BActivityThread;
 import top.niunaijun.blackbox.utils.FileUtils;
 
 /**
- * Created by Milk on 4/9/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IO 重定向核心类。
+ * <p>
+ * 负责文件路径重定向规则的管理和执行，将虚拟应用的文件访问路径
+ * （如 /data/data/包名/）重定向到实际的虚拟数据目录。
+ * 主要解决目标应用中硬编码路径导致的文件访问问题。
+ *
+ * @author Milk
+ * @see VMCore
  */
 @SuppressLint("SdCardPath")
 public class IOCore {
@@ -31,11 +33,18 @@ public class IOCore {
 
     private static final Map<String, Map<String, String>> sCachePackageRedirect = new HashMap<>();
 
+    /** @return IOCore 单例实例 */
     public static IOCore get() {
         return sIOCore;
     }
 
-    // /data/data/com.google/  ----->  /data/data/com.virtual/data/com.google/
+    /**
+     * 添加文件路径重定向规则。
+     * <p>将原始路径映射到重定向路径，同时在 Native 层注册对应的 IO 规则。</p>
+     *
+     * @param origPath     原始路径（如 /data/data/包名/）
+     * @param redirectPath 重定向目标路径
+     */
     public void addRedirect(String origPath, String redirectPath) {
         if (TextUtils.isEmpty(origPath) || TextUtils.isEmpty(redirectPath) || mRedirectMap.get(origPath) != null)
             return;
@@ -47,6 +56,12 @@ public class IOCore {
         VMCore.addIORule(origPath, redirectPath);
     }
 
+    /**
+     * 根据已注册规则重定向文件路径。
+     *
+     * @param path 原始路径
+     * @return 重定向后的路径，无匹配规则时返回原路径
+     */
     public String redirectPath(String path) {
         if (TextUtils.isEmpty(path))
             return path;
@@ -85,7 +100,16 @@ public class IOCore {
         return new File(redirectPath(pathStr, rule));
     }
 
-    // 由于正常情况Application已完成重定向，以下重定向是怕代码写死。
+    /**
+     * 为虚拟应用启用全面的文件路径重定向。
+     * <p>
+     * 注册以下路径的重定向规则：
+     * <ul>
+     *     <li>/data/data/包名/ -> 虚拟数据目录</li>
+     *     <li>/data/user/0/包名/ -> 虚拟数据目录</li>
+     *     <li>/sdcard/Android/data/包名/ -> 虚拟外部存储</li>
+     * </ul>
+     */
     public void enableRedirect(Context context) {
         Map<String, String> rule = new LinkedHashMap<>();
         String packageName = context.getPackageName();

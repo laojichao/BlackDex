@@ -14,12 +14,17 @@ import top.niunaijun.blackbox.fake.hook.ProxyMethod;
 import top.niunaijun.blackbox.utils.Md5Utils;
 
 /**
- * Created by Milk on 4/2/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * ITelephony 系统服务代理，拦截电话和设备标识相关调用。
+ * <p>
+ * 通过替换 ServiceManager 中 {@link Context#TELEPHONY_SERVICE} 的 Binder 对象实现拦截。
+ * 主要拦截设备标识查询方法（getDeviceId、getImeiForSlot、getSubscriberId），
+ * 返回宿主包名的 MD5 哈希值作为伪装标识符，防止虚拟环境中的真实设备信息泄露。
+ * 同时拦截 isUserDataEnabled 始终返回 true。
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
+ * @see Md5Utils
  */
 public class ITelephonyManagerProxy extends BinderInvocationStub {
 
@@ -43,6 +48,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
         return false;
     }
 
+    /** 拦截设备 ID 查询，返回宿主包名的 MD5 哈希值 */
     @ProxyMethod(name = "getDeviceId")
     public static class GetDeviceId extends MethodHook {
         @Override
@@ -53,6 +59,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /** 拦截 IMEI 查询，返回宿主包名的 MD5 哈希值 */
     @ProxyMethod(name = "getImeiForSlot")
     public static class getImeiForSlot extends MethodHook {
         @Override
@@ -63,6 +70,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /** 拦截数据流量状态查询，始终返回 true（已启用） */
     @ProxyMethod(name = "isUserDataEnabled")
     public static class IsUserDataEnabled extends MethodHook {
         @Override
@@ -71,6 +79,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /** 拦截 Subscriber ID 查询，返回宿主包名的 MD5 哈希值 */
     @ProxyMethod(name = "getSubscriberId")
     public static class GetSubscriberId extends MethodHook {
         @Override

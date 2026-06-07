@@ -25,14 +25,23 @@ import top.niunaijun.jnihook.MethodUtils;
 import static top.niunaijun.blackbox.core.env.BEnvironment.EMPTY_JAR;
 
 /**
- * Created by Milk on 4/9/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * VM（虚拟机）核心 Native 接口类。
+ * <p>
+ * 作为 Java 层与 Native 层（libblackdex.so）的桥梁，提供以下核心功能：
+ * <ul>
+     * <li>IO 路径重定向的 Native 注册</li>
+     * <li>基于 DexFile cookie 的 DEX Dump（{@link #cookieDumpDex}）</li>
+     * <li>基于 Hook 的 DEX Dump（{@link #hookDumpDex}）</li>
+     * <li>Xposed 框架隐藏</li>
+     * <li>方法查找与路径重定向回调</li>
+ * </ul>
+ *
+ * @author Milk
+ * @see IOCore
+ * @see DexUtils
  */
 public class VMCore {
+    /** 日志标签 */
     public static final String TAG = "VMCoreJava";
 
     static {
@@ -40,18 +49,53 @@ public class VMCore {
         System.loadLibrary("blackdex");
     }
 
+    /**
+     * 初始化 Native 层，设置当前 Android API Level。
+     *
+     * @param apiLevel Android SDK 版本号
+     */
     public static native void init(int apiLevel);
 
+    /** 启用 Native 层 IO 重定向拦截 */
     public static native void enableIO();
 
+    /**
+     * 在 Native 层添加 IO 重定向规则。
+     *
+     * @param targetPath   原始路径
+     * @param relocatePath 重定向目标路径
+     */
     public static native void addIORule(String targetPath, String relocatePath);
 
+    /** 隐藏 Xposed 框架特征，防止目标应用检测 */
     public static native void hideXposed();
 
+    /**
+     * 通过 DexFile cookie 执行 DEX Dump（Native 方法）。
+     *
+     * @param cookie    DexFile 的 cookie 值
+     * @param dir       输出目录路径
+     * @param fixMethod 是否修复 CodeItem
+     */
     private static native void cookieDumpDex(long cookie, String dir, boolean fixMethod);
 
+    /**
+     * 通过 Hook 方式执行 DEX Dump（Native 方法）。
+     *
+     * @param dir 输出目录路径
+     */
     private static native void hookDumpDex(String dir);
 
+    /**
+     * 通过 DexFile cookie 对 ClassLoader 中的所有 DEX 文件执行 Dump。
+     * <p>
+     * 使用线程池并行 Dump 多个 DEX，Dump 完成后自动修复 DEX 文件头。
+     * 通过 {@link BDumpManager} 实时通知 Dump 进度。
+     * </p>
+     *
+     * @param classLoader 目标应用的 ClassLoader
+     * @param packageName 目标应用包名
+     */
     public static void cookieDumpDex(ClassLoader classLoader, String packageName) {
         List<Long> cookies = DexFileCompat.getCookies(classLoader);
         File file = new File(BlackBoxCore.get().getDexDumpDir(), packageName);
@@ -99,6 +143,12 @@ public class VMCore {
         }
     }
 
+    /**
+     * 获取调用方 UID（供 Native 层回调）。
+     *
+     * @param origCallingUid 原始调用方 UID
+     * @return UID 值（当前直接返回原值）
+     */
     @Keep
     public static int getCallingUid(int origCallingUid) {
 //        if (origCallingUid > 0 && origCallingUid < Process.FIRST_APPLICATION_UID)
@@ -112,6 +162,12 @@ public class VMCore {
         return origCallingUid;
     }
 
+    /**
+     * 文件路径重定向回调（供 Native 层调用）。
+     *
+     * @param path 原始路径
+     * @return 重定向后的路径
+     */
     @Keep
     public static String redirectPath(String path) {
         return IOCore.get().redirectPath(path);
@@ -122,6 +178,11 @@ public class VMCore {
         return IOCore.get().redirectPath(path);
     }
 
+    /**
+     * 加载空 DEX 文件并返回其 cookie 数组（供 Native 层回调）。
+     *
+     * @return DexFile cookie 数组
+     */
     @Keep
     public static long[] loadEmptyDex() {
         try {
@@ -138,6 +199,14 @@ public class VMCore {
         return new long[]{};
     }
 
+    /**
+     * 通过类名、方法名和签名查找方法或构造方法（供 Native 层回调）。
+     *
+     * @param className  类名（JNI 内部格式，如 "Lcom/example/Foo;" 或 "com/example/Foo"）
+     * @param methodName 方法名，构造方法为 "&lt;init&gt;"
+     * @param signature  JNI 方法签名（如 "(I)V"）
+     * @return 找到的 Method 或 Constructor，未找到返回 {@code null}
+     */
     @Keep
     public static Object findMethod(String className, String methodName, String signature) {
         try {

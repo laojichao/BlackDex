@@ -12,21 +12,26 @@ import top.niunaijun.blackbox.BlackBoxCore;
 import top.niunaijun.blackbox.core.system.pm.BPackageSettings;
 
 /**
- * Created by Milk on 4/20/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 已安装包信息实体类（Parcelable）。
+ * <p>
+ * 存储虚拟环境中已安装应用的包名和用户 ID，
+ * 支持通过包管理器查询完整的 ApplicationInfo 和 PackageInfo。
+ *
+ * @author Milk
+ * @see BPackageManagerService
  */
 public class InstalledPackage implements Parcelable {
+    /** 用户 ID */
     public int userId;
+    /** 包名 */
     public String packageName;
 
+    /** @return 该包的 ApplicationInfo */
     public ApplicationInfo getApplication() {
         return BlackBoxCore.getBPackageManager().getApplicationInfo(packageName, PackageManager.GET_META_DATA, userId);
     }
 
+    /** @return 该包的 PackageInfo */
     public PackageInfo getPackageInfo() {
         return BlackBoxCore.getBPackageManager().getPackageInfo(packageName, PackageManager.GET_META_DATA, userId);
     }

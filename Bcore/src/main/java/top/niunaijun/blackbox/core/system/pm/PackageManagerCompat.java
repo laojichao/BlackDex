@@ -28,16 +28,29 @@ import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.compat.BuildCompat;
 
 /**
- * Created by Milk on 4/15/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中包管理器的兼容工具类。
+ * <p>
+ * 该类提供从虚拟环境的{@link BPackage}和{@link BPackageSettings}对象生成
+ * Android系统标准的{@link PackageInfo}、{@link ApplicationInfo}、{@link ActivityInfo}、
+ * {@link ServiceInfo}、{@link ProviderInfo}等信息的方法。
+ * 处理了不同Android版本的API差异兼容。
+ * </p>
+ *
+ * @see BPackage
+ * @see BPackageSettings
  */
 @SuppressLint("SdCardPath")
 public class PackageManagerCompat {
 
+    /**
+     * 从BPackageSettings生成PackageInfo。
+     *
+     * @param ps     包设置信息
+     * @param flags  查询标志
+     * @param state  用户状态
+     * @param userId 目标用户ID
+     * @return PackageInfo对象，无法生成时返回null
+     */
     public static PackageInfo generatePackageInfo(BPackageSettings ps, int flags, BPackageUserState state, int userId) {
         if (ps == null) {
             return null;
@@ -54,6 +67,17 @@ public class PackageManagerCompat {
         return null;
     }
 
+    /**
+     * 从BPackage生成PackageInfo（包含时间戳）。
+     *
+     * @param p              包对象
+     * @param flags          查询标志
+     * @param firstInstallTime 首次安装时间
+     * @param lastUpdateTime  最后更新时间
+     * @param state          用户状态
+     * @param userId         目标用户ID
+     * @return PackageInfo对象，无法生成时返回null
+     */
     public static PackageInfo generatePackageInfo(BPackage p, int flags, long firstInstallTime, long lastUpdateTime, BPackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(flags, state, p.applicationInfo)) {
             return null;
@@ -206,6 +230,15 @@ public class PackageManagerCompat {
         return pi;
     }
 
+    /**
+     * 从BPackage.Activity生成ActivityInfo。
+     *
+     * @param a      Activity组件
+     * @param flags  查询标志
+     * @param state  用户状态
+     * @param userId 目标用户ID
+     * @return ActivityInfo对象，无法生成时返回null
+     */
     public static ActivityInfo generateActivityInfo(BPackage.Activity a, int flags, BPackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(flags, state, a.info.applicationInfo)) {
             return null;
@@ -218,6 +251,15 @@ public class PackageManagerCompat {
         return ai;
     }
 
+    /**
+     * 从BPackage.Service生成ServiceInfo。
+     *
+     * @param s      Service组件
+     * @param flags  查询标志
+     * @param state  用户状态
+     * @param userId 目标用户ID
+     * @return ServiceInfo对象，无法生成时返回null
+     */
     public static ServiceInfo generateServiceInfo(BPackage.Service s, int flags, BPackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(flags, state, s.info.applicationInfo)) {
             return null;
@@ -230,6 +272,15 @@ public class PackageManagerCompat {
         return si;
     }
 
+    /**
+     * 从BPackage.Provider生成ProviderInfo。
+     *
+     * @param p      Provider组件
+     * @param flags  查询标志
+     * @param state  用户状态
+     * @param userId 目标用户ID
+     * @return ProviderInfo对象，无法生成时返回null
+     */
     public static ProviderInfo generateProviderInfo(BPackage.Provider p, int flags, BPackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(flags, state, p.info.applicationInfo)) {
             return null;
@@ -247,6 +298,13 @@ public class PackageManagerCompat {
         return pi;
     }
 
+    /**
+     * 从BPackage.Permission生成PermissionInfo。
+     *
+     * @param p     权限组件
+     * @param flags 查询标志
+     * @return PermissionInfo对象，无法生成时返回null
+     */
     public static PermissionInfo generatePermissionInfo(
             BPackage.Permission p, int flags) {
         if (p == null) return null;
@@ -258,6 +316,13 @@ public class PackageManagerCompat {
         return pi;
     }
 
+    /**
+     * 从BPackage.Instrumentation生成InstrumentationInfo。
+     *
+     * @param i     Instrumentation组件
+     * @param flags 查询标志
+     * @return InstrumentationInfo对象，无法生成时返回null
+     */
     public static InstrumentationInfo generateInstrumentationInfo(
             BPackage.Instrumentation i, int flags) {
         if (i == null) return null;
@@ -269,6 +334,15 @@ public class PackageManagerCompat {
         return ii;
     }
 
+    /**
+     * 从BPackage生成ApplicationInfo。
+     *
+     * @param p      包对象
+     * @param flags  查询标志
+     * @param state  用户状态
+     * @param userId 目标用户ID
+     * @return ApplicationInfo对象，无法生成时返回null
+     */
     public static ApplicationInfo generateApplicationInfo(BPackage p, int flags, BPackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(flags, state, p.applicationInfo)) {
             return null;

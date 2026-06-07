@@ -5,10 +5,10 @@ import android.os.Bundle
 import top.niunaijun.blackdex.view.main.MainActivity
 
 /**
+ * 欢迎/闪屏 Activity。
  *
- * @Description:
- * @Author: wukaicheng
- * @CreateDate: 2021/5/24 21:49
+ * 作为启动入口，创建后立即跳转到 [MainActivity] 并销毁自身，
+ * 实现无界面中转效果。
  */
 class WelcomeActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -17,12 +17,14 @@ import top.niunaijun.blackbox.utils.compat.BuildCompat;
 
 
 /**
- * Created by Milk on 3/2/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 前台守护服务，用于维持 BlackBox 框架进程的存活。
+ * <p>
+ * 在 Android 8.0 (Oreo) 及以上版本通过显示通知来保持前台服务状态，
+ * 防止系统因省电策略杀死框架进程。使用 {@link #START_STICKY} 标志确保
+ * 服务被系统终止后能自动重启。
+ * </p>
+ *
+ * @author Milk
  */
 public class DaemonService extends Service {
     public static final String TAG = "DaemonService";
@@ -76,6 +78,13 @@ public class DaemonService extends Service {
         }
     }
 
+    /**
+     * 内部辅助服务，用于辅助主守护服务启动后立即取消通知。
+     * <p>
+     * 该服务由 {@link DaemonService} 在 onStartCommand 中启动，
+     * 启动后立即取消通知栏通知并停止自身。
+     * </p>
+     */
     public static class DaemonInnerService extends Service {
         @Override
         public void onCreate() {

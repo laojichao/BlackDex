@@ -33,26 +33,51 @@ import top.niunaijun.blackbox.core.system.BProcessManager;
 import static android.content.pm.PackageManager.GET_ACTIVITIES;
 
 /**
- * Created by Milk on 4/5/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的Activity栈管理器。
+ * <p>
+ * 该类负责管理虚拟环境中所有Activity任务栈，处理Activity的启动、销毁和生命周期回调。
+ * 支持Android标准的启动模式（standard、singleTop、singleTask、singleInstance），
+ * 并与系统的{@link android.app.ActivityManager}协同工作以同步任务状态。
+ * </p>
+ *
+ * @see ActivityRecord
+ * @see TaskRecord
  */
 public class ActivityStack {
     private ActivityManager mAms;
     private final Map<Integer, TaskRecord> mTasks = new LinkedHashMap<>();
     private final Set<ActivityRecord> mLaunchingActivities = new HashSet<>();
 
+    /**
+     * 创建Activity栈管理器实例，初始化系统ActivityManager。
+     */
     public ActivityStack() {
         mAms = (ActivityManager) BlackBoxCore.getContext().getSystemService(Context.ACTIVITY_SERVICE);
     }
 
+    /**
+     * 检查Intent是否包含指定标志位。
+     *
+     * @param intent 待检查的Intent
+     * @param flag   要检查的标志位
+     * @return 如果Intent包含该标志位返回true，否则返回false
+     */
     public boolean containsFlag(Intent intent, int flag) {
         return (intent.getFlags() & flag) != 0;
     }
 
+    /**
+     * 批量启动Activity。
+     *
+     * @param userId       目标用户ID
+     * @param intents      Activity的Intent数组
+     * @param resolvedTypes Intent的MIME类型数组
+     * @param resultTo     发起方Activity的token
+     * @param options      启动选项
+     * @return 操作结果码
+     * @throws NullPointerException 当intents或resolvedTypes为null时抛出
+     * @throws IllegalArgumentException 当intents和resolvedTypes长度不一致时抛出
+     */
     public int startActivitiesLocked(int userId, Intent[] intents, String[] resolvedTypes, IBinder resultTo, Bundle options) {
         if (intents == null) {
             throw new NullPointerException("intents is null");
@@ -69,6 +94,19 @@ public class ActivityStack {
         return 0;
     }
 
+    /**
+     * 启动单个Activity，处理各种启动模式（standard、singleTop、singleTask、singleInstance）。
+     *
+     * @param userId       目标用户ID
+     * @param intent       启动Activity的Intent
+     * @param resolvedType Intent的MIME类型
+     * @param resultTo     发起方Activity的token
+     * @param resultWho    发起方标识
+     * @param requestCode  请求码
+     * @param flags        启动标志位
+     * @param options      启动选项
+     * @return 操作结果码
+     */
     public int startActivityLocked(int userId, Intent intent, String resolvedType, IBinder resultTo, String resultWho, int requestCode, int flags, Bundle options) {
         synchronized (mTasks) {
             synchronizeTasks();
@@ -397,6 +435,14 @@ public class ActivityStack {
         }
     }
 
+    /**
+     * Activity创建完成时的回调处理，将Activity加入对应的任务栈。
+     *
+     * @param processRecord 所属进程记录
+     * @param taskId        任务ID
+     * @param token         Activity的IBinder token
+     * @param record        ActivityRecord对象
+     */
     public void onActivityCreated(ProcessRecord processRecord, int taskId, IBinder
             token, ActivityRecord record) {
         synchronized (mLaunchingActivities) {
@@ -417,6 +463,12 @@ public class ActivityStack {
         }
     }
 
+    /**
+     * Activity恢复前台时的回调，将Activity移至栈顶。
+     *
+     * @param userId 目标用户ID
+     * @param token  Activity的IBinder token
+     */
     public void onActivityResumed(int userId, IBinder token) {
         synchronized (mTasks) {
             synchronizeTasks();
@@ -429,6 +481,12 @@ public class ActivityStack {
         }
     }
 
+    /**
+     * Activity销毁时的回调，从任务栈中移除Activity。
+     *
+     * @param userId 目标用户ID
+     * @param token  Activity的IBinder token
+     */
     public void onActivityDestroyed(int userId, IBinder token) {
         synchronized (mTasks) {
             synchronizeTasks();
@@ -441,6 +499,12 @@ public class ActivityStack {
         }
     }
 
+    /**
+     * 结束Activity时的回调，将Activity标记为已结束。
+     *
+     * @param userId 目标用户ID
+     * @param token  Activity的IBinder token
+     */
     public void onFinishActivity(int userId, IBinder token) {
         synchronized (mTasks) {
             synchronizeTasks();

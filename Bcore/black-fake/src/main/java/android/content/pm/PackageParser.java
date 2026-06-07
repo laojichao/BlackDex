@@ -17,19 +17,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Android 隐藏 API {@code android.content.pm.PackageParser} 的桩类。
+ * <p>
+ * 用于解析 APK 文件并提取包信息，包括组件、权限、签名等。
+ * 该桩类包含 PackageParser 在不同 Android 版本中使用的核心内部类（Package、Activity、Service、Provider 等），
+ * 供 BlackDex 在编译期引用，运行时由框架提供真实实现。
+ */
 public class PackageParser {
 
+    /** 解析标志：系统应用 */
     public final static int PARSE_IS_SYSTEM = 1 << 0;
+    /** 解析标志：详细日志输出 */
     public final static int PARSE_CHATTY = 1 << 1;
+    /** 解析标志：必须是 APK 文件 */
     public final static int PARSE_MUST_BE_APK = 1 << 2;
+    /** 解析标志：忽略进程信息 */
     public final static int PARSE_IGNORE_PROCESSES = 1 << 3;
+    /** 解析标志：前向锁定 */
     public final static int PARSE_FORWARD_LOCK = 1 << 4;
+    /** 解析标志：安装在外部存储 */
     public final static int PARSE_EXTERNAL_STORAGE = 1 << 5;
+    /** 解析标志：系统目录中的应用 */
     public final static int PARSE_IS_SYSTEM_DIR = 1 << 6;
+    /** 解析标志：特权应用 */
     public final static int PARSE_IS_PRIVILEGED = 1 << 7;
+    /** 解析标志：收集证书信息 */
     public final static int PARSE_COLLECT_CERTIFICATES = 1 << 8;
+    /** 解析标志：可信覆盖层 */
     public final static int PARSE_TRUSTED_OVERLAY = 1 << 9;
 
+    /**
+     * 新增权限信息，记录在特定 SDK 版本引入的权限。
+     */
     public static class NewPermissionInfo {
         public final String name;
         public final int sdkVersion;
@@ -40,6 +60,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 权限拆分信息，记录某个根权限在特定 SDK 版本后拆分出的子权限。
+     */
     public static class SplitPermissionInfo {
         public final String rootPerm;
         public final String[] newPerms;
@@ -50,11 +73,17 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 新增权限列表，记录从 DONUT 版本开始引入的权限。
+     */
     public static final PackageParser.NewPermissionInfo NEW_PERMISSIONS[] = new PackageParser.NewPermissionInfo[]{
             new PackageParser.NewPermissionInfo(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.os.Build.VERSION_CODES.DONUT, 0),
             new PackageParser.NewPermissionInfo(android.Manifest.permission.READ_PHONE_STATE, android.os.Build.VERSION_CODES.DONUT, 0)
     };
 
+    /**
+     * 解析包项目参数的基类，包含解析所需的资源 ID 和标签信息。
+     */
     static class ParsePackageItemArgs {
         final Package owner;
         final String[] outError;
@@ -71,6 +100,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 解析组件参数，继承自 {@link ParsePackageItemArgs}，额外包含进程、描述和启用状态等资源 ID。
+     */
     static class ParseComponentArgs extends ParsePackageItemArgs {
         final String[] sepProcesses;
         final int processRes;
@@ -84,6 +116,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 轻量级包信息，仅包含包名、版本和安装位置等基本信息，不解析完整组件。
+     */
     public static class PackageLite {
         public final String packageName;
         public final int versionCode;
@@ -123,6 +158,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 单个 APK 文件的轻量级信息，包含包名、版本、签名等基本信息。
+     */
     public static class ApkLite {
         public final String codePath;
         public final String packageName;
@@ -152,30 +190,82 @@ public class PackageParser {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 设置需要独立进程运行的进程名列表。
+     *
+     * @param procs 需要独立进程的进程名数组
+     */
     public void setSeparateProcesses(final String[] procs) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 设置是否仅解析核心应用。
+     *
+     * @param onlyCoreApps true 表示仅解析核心应用
+     */
     public void setOnlyCoreApps(final boolean onlyCoreApps) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 设置显示度量信息，用于解析资源时的密度适配。
+     *
+     * @param metrics 显示度量信息
+     */
     public void setDisplayMetrics(final DisplayMetrics metrics) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 判断指定文件是否为 APK 文件。
+     *
+     * @param file 待检查的文件
+     * @return 如果是 APK 文件返回 true
+     */
     public static final boolean isApkFile(final File file) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 根据解析后的 Package 对象生成 PackageInfo。
+     *
+     * @param p 解析后的 Package 对象
+     * @param gids 组 ID 数组
+     * @param flags 标志位
+     * @param firstInstallTime 首次安装时间
+     * @param lastUpdateTime 最后更新时间
+     * @param grantedPermissions 已授权的权限集合
+     * @param state 用户包状态
+     * @return 生成的 PackageInfo
+     */
     public static PackageInfo generatePackageInfo(final PackageParser.Package p, final int gids[], final int flags, final long firstInstallTime, final long lastUpdateTime, final Set<String> grantedPermissions, final PackageUserState state) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 根据用户包状态判断应用是否可用。
+     *
+     * @param state 用户包状态
+     * @return 如果应用可用返回 true
+     */
     public static boolean isAvailable(final PackageUserState state) {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 根据解析后的 Package 对象生成 PackageInfo（Android 7.0+ 版本，带 userId 参数）。
+     *
+     * @param p 解析后的 Package 对象
+     * @param gids 组 ID 数组
+     * @param flags 标志位
+     * @param firstInstallTime 首次安装时间
+     * @param lastUpdateTime 最后更新时间
+     * @param grantedPermissions 已授权的权限集合
+     * @param state 用户包状态
+     * @param userId 用户 ID
+     * @return 生成的 PackageInfo
+     */
     public static PackageInfo generatePackageInfo(final PackageParser.Package p, final int gids[], final int flags, final long firstInstallTime, final long lastUpdateTime, final Set<String> grantedPermissions, final PackageUserState state, final int userId) {
         throw new RuntimeException("Stub!");
     }
@@ -227,10 +317,23 @@ public class PackageParser {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 收集包的 Manifest 摘要信息。
+     *
+     * @param pkg 解析后的 Package 对象
+     * @throws PackageParserException 解析异常
+     */
     public void collectManifestDigest(final Package pkg) throws PackageParserException {
         throw new RuntimeException("Stub!");
     }
 
+    /**
+     * 收集包的签名证书信息。
+     *
+     * @param pkg 解析后的 Package 对象
+     * @param flags 解析标志
+     * @throws PackageParserException 解析异常
+     */
     public void collectCertificates(final Package pkg, final int flags) throws PackageParserException {
         throw new RuntimeException("Stub!");
     }
@@ -455,6 +558,11 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 通用组件基类，表示包中的一个组件（Activity、Service、Provider、Permission 等）。
+     *
+     * @param <II> IntentInfo 的子类型
+     */
     public static class Component<II extends IntentInfo> {
         public final Package owner;
         public final ArrayList<II> intents;
@@ -497,6 +605,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 权限组件，表示在 Manifest 中声明的权限。
+     */
     public final static class Permission extends Component<IntentInfo> {
         public final PermissionInfo info;
         public boolean tree;
@@ -523,6 +634,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 权限组组件，表示在 Manifest 中声明的权限组。
+     */
     public final static class PermissionGroup extends Component<IntentInfo> {
         public final PermissionGroupInfo info;
 
@@ -547,6 +661,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * Activity 组件，表示在 Manifest 中声明的 Activity。
+     */
     public final static class Activity extends Component<ActivityIntentInfo> {
         public final ActivityInfo info;
 
@@ -566,6 +683,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * Service 组件，表示在 Manifest 中声明的 Service。
+     */
     public final static class Service extends Component<ServiceIntentInfo> {
         public final ServiceInfo info;
 
@@ -585,6 +705,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * ContentProvider 组件，表示在 Manifest 中声明的 ContentProvider。
+     */
     public final static class Provider extends Component<ProviderIntentInfo> {
         public final ProviderInfo info;
         public boolean syncable;
@@ -610,6 +733,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * Instrumentation 组件，表示在 Manifest 中声明的 Instrumentation。
+     */
     public final static class Instrumentation extends Component<IntentInfo> {
         public final InstrumentationInfo info;
 
@@ -629,6 +755,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * Intent 过滤器信息，继承自 {@link IntentFilter}，包含默认行为和标签等额外信息。
+     */
     @SuppressLint("ParcelCreator")
     public static class IntentInfo extends IntentFilter {
         public boolean hasDefault;
@@ -640,6 +769,9 @@ public class PackageParser {
         public int preferred;
     }
 
+    /**
+     * Activity 的 Intent 过滤器信息。
+     */
     @SuppressLint("ParcelCreator")
     public final static class ActivityIntentInfo extends IntentInfo {
         public final Activity activity;
@@ -654,6 +786,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * Service 的 Intent 过滤器信息。
+     */
     @SuppressLint("ParcelCreator")
     public final static class ServiceIntentInfo extends IntentInfo {
         public final Service service;
@@ -668,6 +803,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * ContentProvider 的 Intent 过滤器信息。
+     */
     @SuppressLint("ParcelCreator")
     public static final class ProviderIntentInfo extends IntentInfo {
         public final Provider provider;
@@ -682,6 +820,9 @@ public class PackageParser {
         }
     }
 
+    /**
+     * 包解析异常，包含错误码和详细信息。
+     */
     public static class PackageParserException extends Exception {
 
         public PackageParserException(int error, String detailMessage) {
@@ -696,6 +837,9 @@ public class PackageParser {
 
     }
 
+    /**
+     * 签名详情（Android 9.0+），包含签名数组和未知签名常量。
+     */
     public static class SigningDetails {
         public static final SigningDetails UNKNOWN = null;
         public Signature[] signatures;

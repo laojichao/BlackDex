@@ -6,18 +6,21 @@ import android.os.Parcelable;
 import top.niunaijun.blackbox.utils.Slog;
 
 /**
- * Created by Milk on 4/20/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 安装结果实体类（Parcelable）。
+ * <p>
+ * 封装虚拟环境中 APK 安装操作的结果信息，包含安装状态、包名和错误消息。
+ *
+ * @author Milk
  */
 public class InstallResult implements Parcelable {
+    /** 日志标签 */
     public static final String TAG = "InstallResult";
 
+    /** 安装是否成功，默认 {@code true} */
     public boolean success = true;
+    /** 安装后的包名 */
     public String packageName;
+    /** 结果消息（成功或错误描述） */
     public String msg;
 
     @Override
@@ -41,6 +44,12 @@ public class InstallResult implements Parcelable {
         this.msg = in.readString();
     }
 
+    /**
+     * 标记安装失败。
+     *
+     * @param msg 错误消息
+     * @return 当前实例（支持链式调用）
+     */
     public InstallResult installError(String msg) {
         this.msg = msg;
         this.success = false;

@@ -17,12 +17,16 @@ import top.niunaijun.blackbox.fake.hook.ProxyMethod;
 import top.niunaijun.blackbox.utils.compat.BuildCompat;
 
 /**
- * Created by Milk on 4/10/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IStorageManager/MountService 系统服务代理，拦截存储卷列表查询。
+ * <p>
+ * 通过替换 ServiceManager 中 "mount" 服务的 Binder 对象实现拦截。
+ * 兼容 Android O (8.0) 前后的接口差异（IStorageManager vs IMountService）。
+ * 拦截 getVolumeList 方法以返回虚拟环境隔离的存储卷列表。
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
+ * @see top.niunaijun.blackbox.fake.frameworks.BStorageManager
  */
 public class IStorageManagerProxy extends BinderInvocationStub {
 
@@ -51,6 +55,10 @@ public class IStorageManagerProxy extends BinderInvocationStub {
         return false;
     }
 
+    /**
+     * 拦截存储卷列表查询，优先从虚拟环境存储管理器获取。
+     * 兼容 args 为 null 的情况。
+     */
     @ProxyMethod(name = "getVolumeList")
     public static class GetVolumeList extends MethodHook {
         @Override

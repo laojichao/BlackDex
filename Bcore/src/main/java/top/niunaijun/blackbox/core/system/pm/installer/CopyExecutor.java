@@ -14,16 +14,29 @@ import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.NativeUtils;
 
 /**
- * Created by Milk on 4/24/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
- * 拷贝文件相关
+ * 文件拷贝执行器。
+ * <p>
+ * 该执行器负责在包安装过程中拷贝应用相关的文件，包括：
+ * <ul>
+ *   <li>从APK中提取并拷贝原生库文件（.so）</li>
+ *   <li>拷贝BlackDex的原生库文件</li>
+ *   <li>对于外部安装（FLAG_STORAGE），将APK拷贝到应用目录</li>
+ * </ul>
+ * </p>
+ *
+ * @see Executor
+ * @see BPackageInstallerService
  */
 public class CopyExecutor implements Executor {
 
+    /**
+     * 执行文件拷贝操作。
+     *
+     * @param ps     包设置信息
+     * @param option 安装选项
+     * @param userId 目标用户ID
+     * @return 执行结果，0表示成功，-1表示失败
+     */
     @Override
     public int exec(BPackageSettings ps, InstallOption option, int userId) {
         try {

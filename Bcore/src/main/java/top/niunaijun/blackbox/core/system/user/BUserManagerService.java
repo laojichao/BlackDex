@@ -21,18 +21,27 @@ import top.niunaijun.blackbox.utils.CloseUtils;
 import top.niunaijun.blackbox.utils.FileUtils;
 
 /**
- * Created by Milk on 4/22/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的用户管理服务。
+ * <p>
+ * 该服务负责管理虚拟环境中的用户生命周期，包括用户的创建、删除、查询等操作。
+ * 用户信息通过{@link BUserInfo}表示，并持久化到文件系统。
+ * 每个用户拥有独立的应用数据空间，实现应用数据的隔离。
+ * </p>
+ *
+ * @see BUserInfo
+ * @see BUserHandle
+ * @see BUserStatus
  */
 public class BUserManagerService extends IBUserManagerService.Stub implements ISystemService {
     private static BUserManagerService sService = new BUserManagerService();
     public final HashMap<Integer, BUserInfo> mUsers = new HashMap<>();
     public final Object mUserLock = new Object();
 
+    /**
+     * 获取BUserManagerService单例。
+     *
+     * @return BUserManagerService实例
+     */
     public static BUserManagerService get() {
         return sService;
     }
@@ -42,6 +51,12 @@ public class BUserManagerService extends IBUserManagerService.Stub implements IS
         scanUserL();
     }
 
+    /**
+     * 获取指定用户的信息。
+     *
+     * @param userId 用户ID
+     * @return 用户信息，如果用户不存在返回null
+     */
     @Override
     public BUserInfo getUserInfo(int userId) {
         synchronized (mUserLock) {
@@ -49,6 +64,12 @@ public class BUserManagerService extends IBUserManagerService.Stub implements IS
         }
     }
 
+    /**
+     * 检查指定用户是否存在。
+     *
+     * @param userId 用户ID
+     * @return 如果用户存在返回true，否则返回false
+     */
     @Override
     public boolean exists(int userId) {
         synchronized (mUsers) {
@@ -56,6 +77,13 @@ public class BUserManagerService extends IBUserManagerService.Stub implements IS
         }
     }
 
+    /**
+     * 创建指定用户。如果用户已存在则直接返回。
+     *
+     * @param userId 用户ID
+     * @return 用户信息
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public BUserInfo createUser(int userId) throws RemoteException {
         synchronized (mUserLock) {
@@ -66,6 +94,11 @@ public class BUserManagerService extends IBUserManagerService.Stub implements IS
         }
     }
 
+    /**
+     * 获取所有有效用户（ID >= 0）的信息列表。
+     *
+     * @return 用户信息列表
+     */
     @Override
     public List<BUserInfo> getUsers() {
         synchronized (mUsers) {
@@ -79,12 +112,23 @@ public class BUserManagerService extends IBUserManagerService.Stub implements IS
         }
     }
 
+    /**
+     * 获取所有用户（包括特殊用户）的信息列表。
+     *
+     * @return 用户信息列表
+     */
     public List<BUserInfo> getAllUsers() {
         synchronized (mUsers) {
             return new ArrayList<>(mUsers.values());
         }
     }
 
+    /**
+     * 删除指定用户及其所有已安装的包和数据目录。
+     *
+     * @param userId 目标用户ID
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public void deleteUser(int userId) throws RemoteException {
         synchronized (mUserLock) {

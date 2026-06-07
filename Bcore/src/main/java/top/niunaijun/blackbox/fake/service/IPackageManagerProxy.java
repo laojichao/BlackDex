@@ -28,12 +28,25 @@ import top.niunaijun.blackbox.utils.Reflector;
 import top.niunaijun.blackbox.utils.compat.ParceledListSliceCompat;
 
 /**
- * Created by Milk on 3/30/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * IPackageManager 系统服务代理，拦截所有包管理相关的系统调用。
+ * <p>
+ * 通过替换 ActivityThread.sPackageManager 和 ServiceManager 中 "package" 服务的
+ * Binder 对象，同时替换 ApplicationPackageManager.mPM 字段，实现全面的包管理调用拦截。
+ * </p>
+ * <p>
+ * 主要拦截项：
+ * <ul>
+ *   <li>getPackageInfo / getApplicationInfo - 优先从虚拟环境包管理器查询</li>
+ *   <li>getActivityInfo / getServiceInfo / getProviderInfo / getReceiverInfo - 组件信息查询</li>
+ *   <li>getInstalledPackages / getInstalledApplications - 返回虚拟环境安装列表</li>
+ *   <li>resolveIntent / resolveContentProvider - 意图和 Provider 解析</li>
+ *   <li>queryContentProviders - ContentProvider 列表查询</li>
+ * </ul>
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
+ * @see top.niunaijun.blackbox.fake.frameworks.BPackageManager
  */
 public class IPackageManagerProxy extends BinderInvocationStub {
     public static final String TAG = "PackageManagerStub";
@@ -69,6 +82,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         return false;
     }
 
+    /**
+     * 拦截意图解析，优先从虚拟环境包管理器查询 ResolveInfo。
+     */
     @ProxyMethod(name = "resolveIntent")
     public static class ResolveIntent extends MethodHook {
         @Override
@@ -93,6 +109,10 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截包信息查询，优先从虚拟环境包管理器获取 PackageInfo。
+     * 对开放包（openPackage）回退到系统原始方法。
+     */
     @ProxyMethod(name = "getPackageInfo")
     public static class GetPackageInfo extends MethodHook {
         @Override
@@ -113,6 +133,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截包 UID 查询，替换第一个参数为宿主包名后透传。
+     */
     @ProxyMethod(name = "getPackageUid")
     public static class GetPackageUid extends MethodHook {
         @Override
@@ -122,6 +145,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 Provider 信息查询，优先从虚拟环境包管理器获取。
+     */
     @ProxyMethod(name = "getProviderInfo")
     public static class GetProviderInfo extends MethodHook {
         @Override
@@ -138,6 +164,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 BroadcastReceiver 信息查询，优先从虚拟环境包管理器获取。
+     */
     @ProxyMethod(name = "getReceiverInfo")
     public static class GetReceiverInfo extends MethodHook {
         @Override
@@ -154,6 +183,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 Activity 信息查询，优先从虚拟环境包管理器获取。
+     */
     @ProxyMethod(name = "getActivityInfo")
     public static class GetActivityInfo extends MethodHook {
         @Override
@@ -170,6 +202,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 Service 信息查询，优先从虚拟环境包管理器获取。
+     */
     @ProxyMethod(name = "getServiceInfo")
     public static class GetServiceInfo extends MethodHook {
 
@@ -187,6 +222,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截已安装应用列表查询，返回虚拟环境中已安装的应用列表。
+     */
     @ProxyMethod(name = "getInstalledApplications")
     public static class GetInstalledApplications extends MethodHook {
 
@@ -198,6 +236,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截已安装包列表查询，返回虚拟环境中已安装的包列表。
+     */
     @ProxyMethod(name = "getInstalledPackages")
     public static class GetInstalledPackages extends MethodHook {
 
@@ -209,6 +250,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截应用信息查询，优先从虚拟环境包管理器获取 ApplicationInfo。
+     */
     @ProxyMethod(name = "getApplicationInfo")
     public static class GetApplicationInfo extends MethodHook {
         @Override
@@ -229,6 +273,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 ContentProvider 列表查询，返回当前虚拟进程中注册的 Provider 列表。
+     */
     @ProxyMethod(name = "queryContentProviders")
     public static class QueryContentProviders extends MethodHook {
         @Override
@@ -240,6 +287,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截 ContentProvider 解析，优先从虚拟环境包管理器查询。
+     */
     @ProxyMethod(name = "resolveContentProvider")
     public static class ResolveContentProvider extends MethodHook {
         @Override
@@ -254,6 +304,9 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         }
     }
 
+    /**
+     * 拦截应用安装权限检查，替换包名参数后透传。
+     */
     @ProxyMethod(name = "canRequestPackageInstalls")
     public static class CanRequestPackageInstalls extends MethodHook {
         @Override

@@ -22,12 +22,15 @@ import java.util.ArrayList;
 import top.niunaijun.blackbox.utils.compat.BuildCompat;
 
 /**
- * Created by Milk on 4/21/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的包信息表示。
+ * <p>
+ * 该类实现了{@link Parcelable}接口，用于在虚拟环境中表示一个Android应用包的完整信息，
+ * 包括Activity、Service、Provider、BroadcastReceiver、权限、签名等组件信息。
+ * 基于系统的{@link PackageParser.Package}解析结果构建，支持跨进程传输。
+ * </p>
+ *
+ * @see BPackageSettings
+ * @see BPackageManagerService
  */
 public class BPackage implements Parcelable {
     public ArrayList<Activity> activities = new ArrayList<Activity>(0);
@@ -58,6 +61,11 @@ public class BPackage implements Parcelable {
     // Applications requested features
     public ArrayList<FeatureInfo> reqFeatures = null;
 
+    /**
+     * 从PackageParser.Package构建BPackage实例。
+     *
+     * @param aPackage 系统解析的包信息
+     */
     public BPackage(PackageParser.Package aPackage) {
         this.activities = new ArrayList<>(aPackage.activities.size());
         for (PackageParser.Activity activity : aPackage.activities) {
@@ -143,6 +151,11 @@ public class BPackage implements Parcelable {
         this.reqFeatures = aPackage.reqFeatures;
     }
 
+    /**
+     * 从Parcel反序列化构建BPackage实例。
+     *
+     * @param in 包含序列化数据的Parcel对象
+     */
     protected BPackage(Parcel in) {
         int N = in.readInt();
         this.activities = new ArrayList<>(N);

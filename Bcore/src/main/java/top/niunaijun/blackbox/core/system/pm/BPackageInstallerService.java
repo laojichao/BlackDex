@@ -16,22 +16,42 @@ import top.niunaijun.blackbox.core.system.pm.installer.RemoveUserExecutor;
 import top.niunaijun.blackbox.utils.Slog;
 
 /**
- * Created by Milk on 4/21/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的包安装服务。
+ * <p>
+ * 该服务负责管理虚拟环境中应用的安装、卸载和更新操作。
+ * 采用执行器链模式，将安装/卸载操作拆分为多个步骤依次执行：
+ * <ul>
+ *   <li>安装：创建用户环境 → 创建应用环境 → 拷贝文件</li>
+ *   <li>卸载：移除应用目录 → 移除用户目录</li>
+ *   <li>更新：创建应用环境 → 拷贝文件</li>
+ * </ul>
+ * </p>
+ *
+ * @see Executor
+ * @see BPackageSettings
  */
 public class BPackageInstallerService extends IBPackageInstallerService.Stub implements ISystemService {
     private static final BPackageInstallerService sService = new BPackageInstallerService();
 
+    /**
+     * 获取BPackageInstallerService单例。
+     *
+     * @return BPackageInstallerService实例
+     */
     public static BPackageInstallerService get() {
         return sService;
     }
 
     public static final String TAG = "BPackageInstallerService";
 
+    /**
+     * 为指定用户安装包，依次执行创建用户环境、创建应用环境、拷贝文件三个步骤。
+     *
+     * @param ps     包设置信息
+     * @param userId 目标用户ID
+     * @return 安装结果，0表示成功，负值表示失败
+     * @throws RemoteException IPC通信异常
+     */
     @Override
     public int installPackageAsUser(BPackageSettings ps, int userId) throws RemoteException {
         List<Executor> executors = new ArrayList<>();
@@ -52,6 +72,14 @@ public class BPackageInstallerService extends IBPackageInstallerService.Stub imp
         return 0;
     }
 
+    /**
+     * 为指定用户卸载包，可选择是否移除应用目录。
+     *
+     * @param ps       包设置信息
+     * @param removeApp 是否移除应用目录
+     * @param userId    目标用户ID
+     * @return 卸载结果，0表示成功，负值表示失败
+     */
     @Override
     public int uninstallPackageAsUser(BPackageSettings ps, boolean removeApp, int userId) {
         List<Executor> executors = new ArrayList<>();
@@ -72,6 +100,12 @@ public class BPackageInstallerService extends IBPackageInstallerService.Stub imp
         return 0;
     }
 
+    /**
+     * 更新已安装的包，重新创建应用环境并拷贝文件。
+     *
+     * @param ps 包设置信息
+     * @return 更新结果，0表示成功，负值表示失败
+     */
     @Override
     public int updatePackage(BPackageSettings ps) {
         List<Executor> executors = new ArrayList<>();

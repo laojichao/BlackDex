@@ -7,12 +7,14 @@ import top.niunaijun.blackbox.core.system.pm.BPackage;
 import top.niunaijun.blackbox.core.system.pm.BPackageSettings;
 
 /**
- * Created by Milk on 4/22/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中的用户信息。
+ * <p>
+ * 该类实现了{@link Parcelable}接口，用于表示虚拟环境中一个用户的基本信息，
+ * 包括用户ID、状态、名称和创建时间。
+ * </p>
+ *
+ * @see BUserManagerService
+ * @see BUserStatus
  */
 public class BUserInfo implements Parcelable {
     public int id;
@@ -36,6 +38,11 @@ public class BUserInfo implements Parcelable {
         dest.writeLong(this.createTime);
     }
 
+    /**
+     * 从Parcel反序列化构建BUserInfo实例。
+     *
+     * @param in 包含序列化数据的Parcel对象
+     */
     protected BUserInfo(Parcel in) {
         this.id = in.readInt();
         int tmpStatus = in.readInt();

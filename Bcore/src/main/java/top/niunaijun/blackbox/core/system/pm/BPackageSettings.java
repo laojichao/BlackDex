@@ -17,12 +17,15 @@ import top.niunaijun.blackbox.utils.CloseUtils;
 import top.niunaijun.blackbox.utils.FileUtils;
 
 /**
- * Created by Milk on 4/21/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境中包的配置信息。
+ * <p>
+ * 该类实现了{@link Parcelable}接口，用于管理虚拟环境中一个应用包的配置信息，
+ * 包括包对象、AppId、安装选项、以及每个用户的状态（安装/停止/隐藏）。
+ * 支持通过{@link #save()}方法持久化到文件系统。
+ * </p>
+ *
+ * @see BPackage
+ * @see BPackageUserState
  */
 public class BPackageSettings implements Parcelable {
     public BPackage pkg;
@@ -34,42 +37,99 @@ public class BPackageSettings implements Parcelable {
     public BPackageSettings() {
     }
 
+    /**
+     * 获取所有用户的状态列表。
+     *
+     * @return 用户状态列表
+     */
     public List<BPackageUserState> getUserState() {
         return new ArrayList<>(userState.values());
     }
 
+    /**
+     * 获取所有已注册的用户ID列表。
+     *
+     * @return 用户ID列表
+     */
     public List<Integer> getUserIds() {
         return new ArrayList<>(userState.keySet());
     }
 
+    /**
+     * 设置指定用户的安装状态。
+     *
+     * @param inst   是否已安装
+     * @param userId 目标用户ID
+     */
     public void setInstalled(boolean inst, int userId) {
         modifyUserState(userId).installed = inst;
     }
 
+    /**
+     * 获取指定用户的安装状态。
+     *
+     * @param userId 目标用户ID
+     * @return 如果已安装返回true，否则返回false
+     */
     public boolean getInstalled(int userId) {
         return readUserState(userId).installed;
     }
 
+    /**
+     * 获取指定用户的停止状态。
+     *
+     * @param userId 目标用户ID
+     * @return 如果已停止返回true，否则返回false
+     */
     public boolean getStopped(int userId) {
         return readUserState(userId).stopped;
     }
 
+    /**
+     * 设置指定用户的停止状态。
+     *
+     * @param stop   是否已停止
+     * @param userId 目标用户ID
+     */
     public void setStopped(boolean stop, int userId) {
         modifyUserState(userId).stopped = stop;
     }
 
+    /**
+     * 获取指定用户的隐藏状态。
+     *
+     * @param userId 目标用户ID
+     * @return 如果已隐藏返回true，否则返回false
+     */
     public boolean getHidden(int userId) {
         return readUserState(userId).hidden;
     }
 
+    /**
+     * 设置指定用户的隐藏状态。
+     *
+     * @param hidden 是否已隐藏
+     * @param userId 目标用户ID
+     */
     public void setHidden(boolean hidden, int userId) {
         modifyUserState(userId).hidden = hidden;
     }
 
+    /**
+     * 移除指定用户的配置信息。
+     *
+     * @param userId 目标用户ID
+     */
     public void removeUser(int userId) {
         userState.remove(userId);
     }
 
+    /**
+     * 读取指定用户的用户状态（只读副本）。
+     *
+     * @param userId 目标用户ID
+     * @return 用户状态对象
+     */
     public BPackageUserState readUserState(int userId) {
         BPackageUserState state = userState.get(userId);
         if (state == null) {
@@ -92,6 +152,11 @@ public class BPackageSettings implements Parcelable {
         return state;
     }
 
+    /**
+     * 将当前配置信息持久化到文件系统。
+     *
+     * @return 保存成功返回true，失败返回false
+     */
     public boolean save() {
         synchronized (this) {
             Parcel parcel = Parcel.obtain();

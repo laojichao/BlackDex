@@ -6,16 +6,26 @@ import top.niunaijun.blackbox.core.system.pm.BPackageSettings;
 import top.niunaijun.blackbox.utils.FileUtils;
 
 /**
- * Created by Milk on 4/24/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
- * 创建用户相关
+ * 用户环境创建执行器。
+ * <p>
+ * 该执行器负责在包安装过程中创建指定用户的目录结构，
+ * 包括数据目录、缓存目录、文件目录、数据库目录和设备加密数据目录。
+ * 在创建前会先清理已有的旧数据库目录。
+ * </p>
+ *
+ * @see Executor
+ * @see BPackageInstallerService
  */
 public class CreateUserExecutor implements Executor {
 
+    /**
+     * 执行用户环境目录创建操作。
+     *
+     * @param ps     包设置信息
+     * @param option 安装选项
+     * @param userId 目标用户ID
+     * @return 始终返回0（成功）
+     */
     @Override
     public int exec(BPackageSettings ps, InstallOption option, int userId) {
         String packageName = ps.pkg.packageName;

@@ -8,21 +8,36 @@ import top.niunaijun.blackbox.core.system.ServiceManager;
 import top.niunaijun.blackbox.core.system.am.IBActivityManagerService;
 
 /**
- * Created by Milk on 4/14/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * 虚拟环境 Activity 管理器门面类。
+ * <p>
+ * 提供 Activity 启动等操作的客户端接口，通过 Binder IPC 调用
+ * {@link IBActivityManagerService} 服务端实现。
+ * 采用单例模式，服务连接断开时自动重连。
+ * </p>
+ *
+ * @author Milk
+ * @see IBActivityManagerService
+ * @see ServiceManager
  */
 public class BActivityManager {
     private static final BActivityManager sActivityManager = new BActivityManager();
     private IBActivityManagerService mService;
 
+    /**
+     * 获取 BActivityManager 单例实例。
+     *
+     * @return BActivityManager 全局唯一实例
+     */
     public static BActivityManager get() {
         return sActivityManager;
     }
 
+    /**
+     * 在虚拟环境中启动指定 Activity。
+     *
+     * @param intent   启动目标的 Intent
+     * @param userId   虚拟用户 ID
+     */
     public void startActivity(Intent intent, int userId) {
         try {
             getService().startActivity(intent, userId);

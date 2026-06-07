@@ -5,10 +5,11 @@ import androidx.lifecycle.ViewModelProvider
 import top.niunaijun.blackdex.data.DexDumpRepository
 
 /**
+ * [MainViewModel] 的 ViewModelProvider 工厂。
  *
- * @Description:
- * @Author: wukaicheng
- * @CreateDate: 2021/5/23 14:29
+ * 将 [DexDumpRepository] 注入到 ViewModel 的构造函数中。
+ *
+ * @param repo DEX dump 数据仓库实例
  */
 @Suppress("UNCHECKED_CAST")
 class MainFactory(private val repo:DexDumpRepository): ViewModelProvider.NewInstanceFactory() {

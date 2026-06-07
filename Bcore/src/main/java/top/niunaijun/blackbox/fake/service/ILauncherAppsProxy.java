@@ -10,12 +10,15 @@ import top.niunaijun.blackbox.fake.hook.BinderInvocationStub;
 import top.niunaijun.blackbox.utils.MethodParameterUtils;
 
 /**
- * Created by Milk on 4/13/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * ILauncherApps 系统服务代理，拦截启动器应用查询相关调用。
+ * <p>
+ * 通过替换 ServiceManager 中 {@link Context#LAUNCHER_APPS_SERVICE} 的 Binder 对象
+ * 实现拦截。在所有方法调用前自动将第一个包名参数替换为宿主包名，
+ * 防止虚拟环境中的应用包名泄露给系统启动器。
+ * </p>
+ *
+ * @author Milk
+ * @see BinderInvocationStub
  */
 public class ILauncherAppsProxy extends BinderInvocationStub {
 

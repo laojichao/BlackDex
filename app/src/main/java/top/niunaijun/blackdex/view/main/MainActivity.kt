@@ -30,18 +30,31 @@ import top.niunaijun.blackdex.view.widget.ProgressDialog
 import java.io.File
 
 
+/**
+ * 主界面 Activity。
+ *
+ * 负责展示已安装应用列表，支持搜索过滤、APK 文件选择、
+ * DEX dump 操作触发及进度展示。同时注册了 [IBDumpMonitor]
+ * 实时监听 dump 进度并更新 UI。
+ */
 class MainActivity : PermissionActivity() {
 
+    /** ViewBinding 实例 */
     private val viewBinding: ActivityMainBinding by inflate()
 
+    /** 主 ViewModel */
     private lateinit var viewModel: MainViewModel
 
+    /** 应用列表适配器 */
     private lateinit var mAdapter: MainAdapter
 
+    /** dump 进度弹窗 */
     private var loadingView: ProgressDialog? = null
 
+    /** 文件选择器的上次打开目录 */
     private var initialDir: File? = null
 
+    /** 全量应用列表（用于搜索过滤） */
     private var appList: List<AppInfo> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +70,7 @@ class MainActivity : PermissionActivity() {
 
     }
 
+    /** 初始化列表、浮动按钮、搜索框等 UI 组件 */
     private fun initView() {
         mAdapter = MainAdapter()
         viewBinding.recyclerView.adapter = mAdapter
@@ -97,6 +111,7 @@ class MainActivity : PermissionActivity() {
         }
     }
 
+    /** 初始化 ViewModel 并绑定 LiveData 观察者 */
     private fun initViewModel() {
         viewModel =
             ViewModelProvider(this, InjectionUtil.getMainFactory()).get(MainViewModel::class.java)
@@ -157,6 +172,14 @@ class MainActivity : PermissionActivity() {
         }
     }
 
+    /**
+     * dump 进度监听器。
+     *
+     * 通过 [IBDumpMonitor] 接收 BlackBox 框架的 dump 进度回调：
+     * - 运行中：更新进度条
+     * - 成功：发送成功结果
+     * - 失败：发送失败结果
+     */
     private val mMonitor = object : IBDumpMonitor.Stub() {
         override fun onDump(result: DumpResult?) {
             result?.let {
@@ -187,6 +210,7 @@ class MainActivity : PermissionActivity() {
     }
 
 
+    /** 初始化搜索视图的文本监听 */
     private fun initSearchView() {
         viewBinding.searchView.setOnQueryTextListener(object :
             SimpleSearchView.OnQueryTextListener {
@@ -206,6 +230,7 @@ class MainActivity : PermissionActivity() {
         })
     }
 
+    /** 根据关键字过滤应用列表（匹配应用名或包名） */
     private fun filterApp(newText: String) {
         val newList = this.appList.filter {
             it.name.contains(newText, true) or it.packageName.contains(newText, true)
@@ -213,6 +238,7 @@ class MainActivity : PermissionActivity() {
         mAdapter.replaceData(newList)
     }
 
+    /** 显示 dump 进度弹窗 */
     private fun showLoading() {
         if (this.loadingView == null) {
             loadingView = ProgressDialog()
@@ -220,11 +246,13 @@ class MainActivity : PermissionActivity() {
         loadingView?.show(supportFragmentManager, "")
     }
 
+    /** 隐藏 dump 进度弹窗并释放引用 */
     private fun hideLoading() {
         loadingView?.dismiss()
         loadingView = null
     }
 
+    /** 隐藏软键盘 */
     private fun hideKeyboard() {
         val imm: InputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         window.peekDecorView()?.run {

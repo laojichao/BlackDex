@@ -24,16 +24,25 @@ import static top.niunaijun.blackbox.core.env.BEnvironment.JUNIT_JAR;
 import static top.niunaijun.blackbox.core.env.BEnvironment.VM_JAR;
 
 /**
- * Created by Milk on 4/22/21.
- * * ∧＿∧
- * (`･ω･∥
- * 丶　つ０
- * しーＪ
- * 此处无Bug
+ * BlackBox 虚拟化框架的核心系统类，负责整个虚拟系统的初始化和启动。
+ * <p>
+ * 在系统启动时依次初始化：环境配置、包管理服务、用户管理服务、Activity管理服务、
+ * 存储管理服务、包安装服务，然后执行预安装应用和JAR环境的初始化。
+ * </p>
+ *
+ * @author Milk
+ * @see BPackageManagerService
+ * @see BActivityManagerService
+ * @see BUserManagerService
  */
 public class BlackBoxSystem {
     private static BlackBoxSystem sBlackBoxSystem;
 
+    /**
+     * 获取系统实例（双重检查锁定单例模式）。
+     *
+     * @return BlackBoxSystem 单例实例
+     */
     public static BlackBoxSystem getSystem() {
         if (sBlackBoxSystem == null) {
             synchronized (BlackBoxSystem.class) {
@@ -45,6 +54,10 @@ public class BlackBoxSystem {
         return sBlackBoxSystem;
     }
 
+    /**
+     * 启动虚拟系统。按顺序初始化所有子系统服务，
+     * 并执行预安装应用的安装和JAR运行环境的初始化。
+     */
     public void startup() {
         BEnvironment.load();
 
